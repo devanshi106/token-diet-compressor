@@ -1,0 +1,72 @@
+{
+  "summary": {
+    "n_total": 2,
+    "n_kept": 0,
+    "n_skipped_quota": 2,
+    "context_tokens": {
+      "normal_mean": 0.0,
+      "smart_mean": 0.0,
+      "normal_median": 0.0,
+      "smart_median": 0.0
+    },
+    "compression_pct": {
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "latency_ms": {
+      "normal_mean": 0.0,
+      "smart_mean": 0.0,
+      "median_delta_ms": 0.0
+    },
+    "correctness": {
+      "normal": 0.0,
+      "smart": 0.0
+    }
+  },
+  "rows": [
+    {
+      "query_id": 1,
+      "query": "What is the production base URL for the CloudSync HTTP API?",
+      "category": "easy",
+      "difficulty": "easy",
+      "required_keywords": [
+        "api.cloudsync.dev"
+      ],
+      "source_doc": "api_documentation",
+      "normal_ctx_tokens": 757,
+      "smart_ctx_tokens": 741,
+      "compression_pct": 2.1136063408190187,
+      "normal_latency_ms": 643.881999887526,
+      "smart_latency_ms": 306.7554000299424,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 2,
+      "query": "How long does an access token issued by CloudSync's OAuth endpoint live?",
+      "category": "easy",
+      "difficulty": "easy",
+      "required_keywords": [
+        "60 minutes"
+      ],
+      "source_doc": "authentication_guide",
+      "normal_ctx_tokens": 604,
+      "smart_ctx_tokens": 629,
+      "compression_pct": -4.139072847682113,
+      "normal_latency_ms": 306.6646000370383,
+      "smart_latency_ms": 306.76770000718534,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    }
+  ]
+}

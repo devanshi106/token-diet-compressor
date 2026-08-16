@@ -1,0 +1,130 @@
+{
+  "$schema_note": "SYNTHETIC DEVELOPMENT / EVALUATION DATA -- NOT A REAL PRODUCT",
+  "nova_compute": {
+    "tiers": [
+      {
+        "id": "edge",
+        "per_workload": {
+          "cpu_cores_max": 2,
+          "memory_gb_max": 4,
+          "disk_gb_max": 20,
+          "enforcement": "hard"
+        },
+        "available_on_plans": ["starter", "growth", "business", "enterprise"]
+      },
+      {
+        "id": "standard",
+        "per_workload": {
+          "cpu_cores_max": 16,
+          "memory_gb_max": 64,
+          "disk_gb_max": 500,
+          "enforcement": "hard"
+        },
+        "available_on_plans": ["growth", "business", "enterprise"]
+      },
+      {
+        "id": "isolated",
+        "per_workload": {
+          "cpu_cores_max": 64,
+          "memory_gb_max": 256,
+          "disk_gb_max": 2000,
+          "enforcement": "hard"
+        },
+        "available_on_plans": ["business", "enterprise"]
+      },
+      {
+        "id": "isolated_gpu",
+        "per_workload": {
+          "cpu_cores_max": 64,
+          "memory_gb_max": 256,
+          "disk_gb_max": 2000,
+          "gpu_max": 8,
+          "enforcement": "hard"
+        },
+        "available_on_plans": ["enterprise"],
+        "feature_flag": "gpu_pooling",
+        "release_stage": "private_beta"
+      }
+    ],
+    "per_account_ceiling_multiplier_of_per_workload": 10,
+    "soft_ceiling_warnings": ["cpu_saturation_above_0.8_for_15_minutes"]
+  },
+  "nova_db": {
+    "cluster_tiers": [
+      {
+        "id": "starter",
+        "storage_gb_max": 100,
+        "max_connections": 50,
+        "max_replicas": 0,
+        "backup_retention_days": 7,
+        "enforcement": "hard"
+      },
+      {
+        "id": "growth",
+        "storage_gb_max": 1000,
+        "max_connections": 200,
+        "max_replicas": 2,
+        "backup_retention_days": 14,
+        "enforcement": "hard"
+      },
+      {
+        "id": "business",
+        "storage_gb_max": 10000,
+        "max_connections": 1000,
+        "max_replicas": 4,
+        "backup_retention_days": 30,
+        "point_in_time_recovery_days": 30,
+        "enforcement": "hard"
+      },
+      {
+        "id": "enterprise",
+        "storage_gb_max": null,
+        "max_connections": 5000,
+        "max_replicas": 6,
+        "backup_retention_days": 35,
+        "point_in_time_recovery_days": 35,
+        "cross_region_replication": true,
+        "enforcement": "hard"
+      }
+    ]
+  },
+  "nova_stream": {
+    "topic_limits": {
+      "partitions_per_topic_max": 64,
+      "consumer_groups_per_topic_max": 100,
+      "retention_days_max": {
+        "business": 90,
+        "enterprise": 365
+      },
+      "throughput_mb_per_partition_per_second_max": 5,
+      "enforcement": "hard"
+    }
+  },
+  "workspaces": {
+    "members_per_workspace_max": {
+      "starter": 5,
+      "growth": 25,
+      "business": 100,
+      "enterprise": null
+    },
+    "environments_per_workspace_max": {
+      "starter": 5,
+      "growth": 10,
+      "business": 50,
+      "enterprise": 500
+    },
+    "tokens_per_workspace_max": 1000,
+    "workspaces_per_account_max": {
+      "starter": 1,
+      "growth": 1,
+      "business": 10,
+      "enterprise": null
+    }
+  },
+  "soft_vs_hard_ceiling_examples": {
+    "nova_compute_oversubscription": "soft",
+    "api_tokens_per_workspace": "hard",
+    "nova_db_storage_per_cluster": "hard",
+    "nova_stream_partition_count": "hard"
+  }
+}

@@ -1,0 +1,32 @@
+# Runtime dependencies for the Token-Diet Dynamic Context Compressor.
+# Pin major versions loosely; lock further in CI.
+
+# Configuration
+PyYAML>=6.0,<7.0
+
+# Tokenization (per plan §9: tiktoken for OpenAI-compatible token counting)
+tiktoken>=0.7,<1.0
+
+# Vector math + index
+numpy>=1.24,<3.0
+
+# Embeddings (per plan §6: sentence-transformers — optional; the
+# sentence-transformers import is lazy so the test suite runs without
+# the model weights installed.)
+sentence-transformers>=2.7,<6.0
+
+# Vector store (per plan §6: faiss-cpu for local indexing; optional --
+# the dashboard and tests default to a pure-NumPy index)
+faiss-cpu>=1.8,<2.0
+
+# .env loader (optional; load_config falls back to a stdlib parser)
+python-dotenv>=1.0,<2.0
+
+# Final LLM (Google Gemini SDK)
+google-genai>=1.0,<3.0
+
+# Dashboard (per plan §6: streamlit)
+streamlit>=1.30,<2.0
+
+# Dev / test
+pytest>=8.0,<10.0

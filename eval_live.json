@@ -1,0 +1,575 @@
+{
+  "summary": {
+    "n_total": 25,
+    "n_kept": 0,
+    "n_skipped_quota": 25,
+    "context_tokens": {
+      "normal_mean": 0.0,
+      "smart_mean": 0.0,
+      "normal_median": 0.0,
+      "smart_median": 0.0
+    },
+    "compression_pct": {
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "latency_ms": {
+      "normal_mean": 0.0,
+      "smart_mean": 0.0,
+      "median_delta_ms": 0.0
+    },
+    "correctness": {
+      "normal": 0.0,
+      "smart": 0.0
+    }
+  },
+  "rows": [
+    {
+      "query_id": 1,
+      "query": "What is the production base URL for the CloudSync HTTP API?",
+      "category": "easy",
+      "difficulty": "easy",
+      "required_keywords": [
+        "api.cloudsync.dev"
+      ],
+      "source_doc": "api_documentation",
+      "normal_ctx_tokens": 757,
+      "smart_ctx_tokens": 741,
+      "compression_pct": 2.1136063408190187,
+      "normal_latency_ms": 422.50200011767447,
+      "smart_latency_ms": 305.11879990808666,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 2,
+      "query": "How long does an access token issued by CloudSync's OAuth endpoint live?",
+      "category": "easy",
+      "difficulty": "easy",
+      "required_keywords": [
+        "60 minutes"
+      ],
+      "source_doc": "authentication_guide",
+      "normal_ctx_tokens": 604,
+      "smart_ctx_tokens": 629,
+      "compression_pct": -4.139072847682113,
+      "normal_latency_ms": 306.77219992503524,
+      "smart_latency_ms": 410.7141001150012,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 3,
+      "query": "What HTTP status code does the API return when the rate limit is exceeded?",
+      "category": "easy",
+      "difficulty": "easy",
+      "required_keywords": [
+        "429"
+      ],
+      "source_doc": "rate_limits",
+      "normal_ctx_tokens": 765,
+      "smart_ctx_tokens": 701,
+      "compression_pct": 8.366013071895429,
+      "normal_latency_ms": 305.13360002078116,
+      "smart_latency_ms": 307.03740008175373,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 4,
+      "query": "What is the price of the Starter plan per user per month?",
+      "category": "easy",
+      "difficulty": "easy",
+      "required_keywords": [
+        "$8"
+      ],
+      "source_doc": "subscription_plans",
+      "normal_ctx_tokens": 803,
+      "smart_ctx_tokens": 665,
+      "compression_pct": 17.185554171855543,
+      "normal_latency_ms": 411.5475998260081,
+      "smart_latency_ms": 305.3786000236869,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 5,
+      "query": "What TLS versions and cipher suites does CloudSync support for in-transit encryption?",
+      "category": "multi-fact",
+      "difficulty": "medium",
+      "required_keywords": [
+        "TLS 1.3",
+        "TLS 1.2",
+        "forward secrecy"
+      ],
+      "source_doc": "security_policy",
+      "normal_ctx_tokens": 672,
+      "smart_ctx_tokens": 654,
+      "compression_pct": 2.67857142857143,
+      "normal_latency_ms": 307.63510009273887,
+      "smart_latency_ms": 254.15099994279444,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 6,
+      "query": "What storage does the Team plan include per user and how many API calls per month?",
+      "category": "multi-fact",
+      "difficulty": "medium",
+      "required_keywords": [
+        "1 terabyte",
+        "500,000"
+      ],
+      "source_doc": "subscription_plans",
+      "normal_ctx_tokens": 792,
+      "smart_ctx_tokens": 733,
+      "compression_pct": 7.44949494949495,
+      "normal_latency_ms": 359.4116000458598,
+      "smart_latency_ms": 307.63289984315634,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 7,
+      "query": "What are the four subscription tiers that CloudSync offers as paid plans?",
+      "category": "multi-fact",
+      "difficulty": "medium",
+      "required_keywords": [
+        "Starter",
+        "Team",
+        "Business",
+        "Enterprise"
+      ],
+      "source_doc": "subscription_plans",
+      "normal_ctx_tokens": 782,
+      "smart_ctx_tokens": 559,
+      "compression_pct": 28.516624040920714,
+      "normal_latency_ms": 308.26999992132187,
+      "smart_latency_ms": 305.8996999170631,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 8,
+      "query": "If a customer's payment fails repeatedly, what is the timeline and the ultimate consequence?",
+      "category": "verbose-context",
+      "difficulty": "medium",
+      "required_keywords": [
+        "14 days",
+        "Free plan"
+      ],
+      "source_doc": "billing_and_refunds",
+      "normal_ctx_tokens": 686,
+      "smart_ctx_tokens": 715,
+      "compression_pct": -4.2274052478134205,
+      "normal_latency_ms": 307.74850002489984,
+      "smart_latency_ms": 306.96039996109903,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 9,
+      "query": "What is the maximum file size that a single POST /v3/files request can upload?",
+      "category": "verbose-context",
+      "difficulty": "medium",
+      "required_keywords": [
+        "2",
+        "GiB"
+      ],
+      "source_doc": "api_documentation",
+      "normal_ctx_tokens": 623,
+      "smart_ctx_tokens": 641,
+      "compression_pct": -2.8892455858748,
+      "normal_latency_ms": 306.7524000070989,
+      "smart_latency_ms": 616.2860998883843,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 10,
+      "query": "What is the maximum number of files that a single list-endpoint request can return?",
+      "category": "verbose-context",
+      "difficulty": "hard",
+      "required_keywords": [
+        "500"
+      ],
+      "source_doc": "api_documentation",
+      "normal_ctx_tokens": 740,
+      "smart_ctx_tokens": 717,
+      "compression_pct": 3.1081081081081097,
+      "normal_latency_ms": 305.4219998884946,
+      "smart_latency_ms": 307.0782001595944,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 11,
+      "query": "How long is the money-back window for monthly and annual plans?",
+      "category": "redundant",
+      "difficulty": "medium",
+      "required_keywords": [
+        "14 days",
+        "30 days"
+      ],
+      "source_doc": "billing_and_refunds",
+      "normal_ctx_tokens": 655,
+      "smart_ctx_tokens": 683,
+      "compression_pct": -4.274809160305337,
+      "normal_latency_ms": 307.0338999386877,
+      "smart_latency_ms": 307.93939996510744,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 12,
+      "query": "What's the difference between the Business and Enterprise plan uptime SLA?",
+      "category": "redundant",
+      "difficulty": "medium",
+      "required_keywords": [
+        "99.9%",
+        "99.95%"
+      ],
+      "source_doc": "service_availability",
+      "normal_ctx_tokens": 725,
+      "smart_ctx_tokens": 720,
+      "compression_pct": 0.6896551724137945,
+      "normal_latency_ms": 409.53680011443794,
+      "smart_latency_ms": 306.7296000663191,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 13,
+      "query": "What is the global per-key rate limit and burst tolerance for CloudSync?",
+      "category": "redundant",
+      "difficulty": "medium",
+      "required_keywords": [
+        "600",
+        "1000"
+      ],
+      "source_doc": "rate_limits",
+      "normal_ctx_tokens": 603,
+      "smart_ctx_tokens": 623,
+      "compression_pct": -3.316749585406309,
+      "normal_latency_ms": 306.6038000397384,
+      "smart_latency_ms": 307.8687998931855,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 14,
+      "query": "How long are deleted files recoverable from the trash, and how long are cold-storage backups retained?",
+      "category": "cross-doc",
+      "difficulty": "hard",
+      "required_keywords": [
+        "30 days",
+        "30 days"
+      ],
+      "source_doc": "data_retention",
+      "normal_ctx_tokens": 731,
+      "smart_ctx_tokens": 487,
+      "compression_pct": 33.378932968536255,
+      "normal_latency_ms": 398.178500123322,
+      "smart_latency_ms": 317.6969001069665,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 15,
+      "query": "What happens to a customer's data when their subscription ends, and how is that different from file deletion?",
+      "category": "cross-doc",
+      "difficulty": "hard",
+      "required_keywords": [
+        "grace",
+        "trash"
+      ],
+      "source_doc": "data_retention",
+      "normal_ctx_tokens": 671,
+      "smart_ctx_tokens": 687,
+      "compression_pct": -2.3845007451564815,
+      "normal_latency_ms": 492.6438999827951,
+      "smart_latency_ms": 326.4979999512434,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 16,
+      "query": "Which plans include SSO and what retention policy applies to their audit logs?",
+      "category": "cross-doc",
+      "difficulty": "hard",
+      "required_keywords": [
+        "Business",
+        "Enterprise"
+      ],
+      "source_doc": "subscription_plans",
+      "normal_ctx_tokens": 732,
+      "smart_ctx_tokens": 740,
+      "compression_pct": -1.0928961748633892,
+      "normal_latency_ms": 307.4888000264764,
+      "smart_latency_ms": 307.86050017923117,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 17,
+      "query": "What is the longest-running support tier's response time for severity-1 incidents?",
+      "category": "cross-doc",
+      "difficulty": "medium",
+      "required_keywords": [
+        "Dedicated",
+        "1-hour"
+      ],
+      "source_doc": "support_policy",
+      "normal_ctx_tokens": 741,
+      "smart_ctx_tokens": 747,
+      "compression_pct": -0.809716599190291,
+      "normal_latency_ms": 306.59270007163286,
+      "smart_latency_ms": 307.02269985340536,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 18,
+      "query": "What encryption key custody controls prevent CloudSync employees from reading customer data?",
+      "category": "needs-context",
+      "difficulty": "hard",
+      "required_keywords": [
+        "HSM",
+        "FIPS 140-2"
+      ],
+      "source_doc": "security_policy",
+      "normal_ctx_tokens": 834,
+      "smart_ctx_tokens": 658,
+      "compression_pct": 21.103117505995208,
+      "normal_latency_ms": 307.1987999137491,
+      "smart_latency_ms": 312.7219001762569,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 19,
+      "query": "How does CloudSync distinguish between a hard-delete and a recoverable delete?",
+      "category": "needs-context",
+      "difficulty": "hard",
+      "required_keywords": [
+        "trash",
+        "verification sweep"
+      ],
+      "source_doc": "data_retention",
+      "normal_ctx_tokens": 624,
+      "smart_ctx_tokens": 652,
+      "compression_pct": -4.487179487179493,
+      "normal_latency_ms": 301.58279999159276,
+      "smart_latency_ms": 306.6822001710534,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 20,
+      "query": "What does a webhook endpoint receive in the X-CloudSync-Signature header and why?",
+      "category": "needs-context",
+      "difficulty": "medium",
+      "required_keywords": [
+        "HMAC-SHA256"
+      ],
+      "source_doc": "developer_guide",
+      "normal_ctx_tokens": 786,
+      "smart_ctx_tokens": 535,
+      "compression_pct": 31.93384223918575,
+      "normal_latency_ms": 307.8329002019018,
+      "smart_latency_ms": 306.3635998405516,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 21,
+      "query": "What is the minimum storage quota for the Free plan and what is the minimum storage quota for the Starter plan?",
+      "category": "distractor-heavy",
+      "difficulty": "medium",
+      "required_keywords": [
+        "5 GB",
+        "100 GB"
+      ],
+      "source_doc": "subscription_plans",
+      "normal_ctx_tokens": 784,
+      "smart_ctx_tokens": 637,
+      "compression_pct": 18.75,
+      "normal_latency_ms": 307.3658999055624,
+      "smart_latency_ms": 307.10779991932213,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 22,
+      "query": "How are SLA credits calculated and what is the cap?",
+      "category": "distractor-heavy",
+      "difficulty": "medium",
+      "required_keywords": [
+        "credit",
+        "30 percent"
+      ],
+      "source_doc": "service_availability",
+      "normal_ctx_tokens": 720,
+      "smart_ctx_tokens": 739,
+      "compression_pct": -2.6388888888888795,
+      "normal_latency_ms": 307.16590001247823,
+      "smart_latency_ms": 307.15559981763363,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 23,
+      "query": "Which support tiers include a private Slack channel?",
+      "category": "distractor-heavy",
+      "difficulty": "easy",
+      "required_keywords": [
+        "Priority"
+      ],
+      "source_doc": "support_policy",
+      "normal_ctx_tokens": 694,
+      "smart_ctx_tokens": 719,
+      "compression_pct": -3.6023054755043304,
+      "normal_latency_ms": 275.4385999869555,
+      "smart_latency_ms": 345.7388000097126,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 24,
+      "query": "What storage does the Enterprise plan include and what SLA does it offer?",
+      "category": "structured",
+      "difficulty": "medium",
+      "required_keywords": [
+        "Unlimited",
+        "99.95%"
+      ],
+      "source_doc": "subscription_plans",
+      "normal_ctx_tokens": 755,
+      "smart_ctx_tokens": 573,
+      "compression_pct": 24.10596026490066,
+      "normal_latency_ms": 301.3285000342876,
+      "smart_latency_ms": 305.8823000174016,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    },
+    {
+      "query_id": 25,
+      "query": "Which event types can be delivered through the in-app inbox channel, and how long are they retained?",
+      "category": "structured",
+      "difficulty": "hard",
+      "required_keywords": [
+        "90 days"
+      ],
+      "source_doc": "notification_system",
+      "normal_ctx_tokens": 665,
+      "smart_ctx_tokens": 686,
+      "compression_pct": -3.157894736842115,
+      "normal_latency_ms": 307.532399892807,
+      "smart_latency_ms": 307.7662999276072,
+      "normal_correct": false,
+      "smart_correct": false,
+      "normal_answer_excerpt": "",
+      "smart_answer_excerpt": "",
+      "quota_failed": true,
+      "skipped": true
+    }
+  ]
+}

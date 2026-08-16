@@ -1,0 +1,277 @@
+{
+  "_note": "SYNTHETIC DEVELOPMENT / EVALUATION DATA -- NOT A REAL PRODUCT",
+  "_purpose": "Evaluation queries for the NovaCloud fictional knowledge base. Mix of context restoration, pronoun-dependence, redundancy, noisy retrieval, token-budget selection, structured-data retrieval, and multi-document reasoning challenges.",
+  "schema_version": "1.0",
+  "queries": [
+    {
+      "id": "q01",
+      "category": "single_fact",
+      "query": "When was NovaCloud founded and where is its headquarters?",
+      "expected_answer": "NovaCloud was founded in 2016 and is headquartered in Lisbon, Portugal.",
+      "expected_documents": ["company_overview.md"],
+      "required_keywords": ["2016", "Lisbon", "Portugal"],
+      "challenge": "simple single-doc fact lookup"
+    },
+    {
+      "id": "q02",
+      "category": "structured_data_retrieval",
+      "query": "What is the monthly base price of the Business plan in USD?",
+      "expected_answer": "$499 USD per month (or $5,089 per year, which is a 15% discount on twelve months).",
+      "expected_documents": ["pricing_and_plans.md", "structured/pricing_plans.json"],
+      "required_keywords": ["499", "USD"],
+      "challenge": "structured-data lookup"
+    },
+    {
+      "id": "q03",
+      "category": "structured_data_retrieval",
+      "query": "What is the production API rate limit per minute and per hour?",
+      "expected_answer": "Production tokens are limited to 600 requests per minute and 60,000 requests per hour. Enterprise tokens also have a 250,000 per-day limit. A 20% burst is allowed against the per-minute limit.",
+      "expected_documents": ["api_rate_limits.md", "structured/api_limits.json"],
+      "required_keywords": ["600", "60,000"],
+      "challenge": "structured-data lookup"
+    },
+    {
+      "id": "q04",
+      "category": "context_restoration",
+      "query": "What are the two SLA targets for the NovaDB service, and how do they differ from the NovaObserve target?",
+      "expected_answer": "NovaDB has a 99.95% SLA target (same as NovaCompute control plane and Dashboard/API). NovaObserve has a 99.5% target, lower than NovaDB by 0.45 percentage points. NovaDB has a stricter SLA than NovaObserve because database outages have wider blast radius than observability outages.",
+      "expected_documents": ["service_availability.md"],
+      "required_keywords": ["99.95%", "99.5%"],
+      "challenge": "split info: targets must be read together to compare"
+    },
+    {
+      "id": "q05",
+      "category": "context_restoration",
+      "query": "What four products make up the NovaCloud storage and data tier, and which one is for streams?",
+      "expected_answer": "NovaDB (relational database), NovaStream (event streams), NovaObserve (observability/metrics), and the in-product analytics addon. NovaStream is the one for streams. NovaObserve is metrics/traces, not streams.",
+      "expected_documents": ["products_and_features.md"],
+      "required_keywords": ["NovaDB", "NovaStream", "NovaObserve", "analytics"],
+      "challenge": "distractor: 'NovaObserve' might look like a streams product from the name"
+    },
+    {
+      "id": "q06",
+      "category": "pronoun_dependence",
+      "query": "Does it support a free trial and how long does it last?",
+      "expected_answer": "Yes. New accounts receive a $250 / 30-day evaluation credit. A payment method must be added before the trial ends or services will be suspended. This applies to NovaCloud in general; the credit applies to usage charges only and is not stackable with the startup credit.",
+      "expected_documents": ["pricing_and_plans.md", "deployment_guide.md"],
+      "required_keywords": ["$250", "30-day"],
+      "challenge": "'It' requires resolving to NovaCloud from context"
+    },
+    {
+      "id": "q07",
+      "category": "pronoun_dependence",
+      "query": "When is it actually deleted if the owner hasn't logged in for a week?",
+      "expected_answer": "The 14-day grace period is governed by the account owner's last login, not by the closure date. If the owner has not logged in for seven days before closure, the actual deletion date may be up to seven days earlier than the closure date suggests.",
+      "expected_documents": ["account_management.md", "billing.md"],
+      "required_keywords": ["14-day", "earlier"],
+      "challenge": "pronoun 'it' resolves to 'account'; the nuance about *last login* vs *closure date* lives in a separate paragraph"
+    },
+    {
+      "id": "q08",
+      "category": "redundancy",
+      "query": "What is the refund policy for a paid subscription?",
+      "expected_answer": "Customers can cancel within 30 days for a full money-back refund. Between day 31 and day 90, a 50% refund of the unused prepaid portion is available. After 90 days, prepaid amounts are not refundable except where required by law. Usage-based charges (NovaDB storage beyond included tier, NovaStream ingress/egress, etc.) are non-refundable after the close of the billing cycle in which they were incurred.",
+      "expected_documents": ["refunds.md"],
+      "required_keywords": ["30 days", "90 days", "50%"],
+      "challenge": "redundancy: same info paraphrased in multiple paragraphs"
+    },
+    {
+      "id": "q09",
+      "category": "noisy_retrieval",
+      "query": "What bounty does NovaCloud pay for a critical severity vulnerability?",
+      "expected_answer": "$25,000 for a critical severity vulnerability (Low $250, Medium $2,500, High $10,000). Bounties are paid via bank transfer or PayPal only — not cryptocurrency.",
+      "expected_documents": ["security.md"],
+      "required_keywords": ["25,000", "critical"],
+      "challenge": "distractor paragraph about FedRAMP could pull noise into the retrieval context"
+    },
+    {
+      "id": "q10",
+      "category": "noisy_retrieval",
+      "query": "Does NovaCloud have an official Jenkins plugin?",
+      "expected_answer": "No. NovaCloud does not maintain a Jenkins plugin. Jenkins users can integrate using the generic webhook integration or a community-registry Jenkinsfile. The integrations team has not committed to a release date for an official plugin.",
+      "expected_documents": ["integrations.md"],
+      "required_keywords": ["No", "does not maintain"],
+      "challenge": "negative-answer query — easy to retrieve the distractor first"
+    },
+    {
+      "id": "q11",
+      "category": "noisy_retrieval",
+      "query": "Has NovaCloud achieved FedRAMP Moderate authorization?",
+      "expected_answer": "No. NovaCloud is actively pursuing FedRAMP Moderate and expects authorization in Q4 2026. A 2021 press release claiming achievement was incorrect. Customers who need FedRAMP today should consider the GovCloud deployment option (separate subsidiary, not covered by this document).",
+      "expected_documents": ["security.md"],
+      "required_keywords": ["No", "pursuing"],
+      "challenge": "distractor paragraph is the only place that talks about FedRAMP at all"
+    },
+    {
+      "id": "q12",
+      "category": "structured_data_retrieval",
+      "query": "How many seats are included in the Business plan, and how many in the Starter plan?",
+      "expected_answer": "Business includes 25 seats; Starter includes 1 seat; Growth includes 5; Enterprise is negotiated individually.",
+      "expected_documents": ["pricing_and_plans.md", "structured/pricing_plans.json"],
+      "required_keywords": ["25", "1"],
+      "challenge": "compare-across-plans; need to load structured data"
+    },
+    {
+      "id": "q13",
+      "category": "multi_document_reasoning",
+      "query": "A customer on the Growth plan wants to enable SAML SSO. Will it work, and what plan should they upgrade to?",
+      "expected_answer": "No, SAML SSO is Enterprise-only. The customer should upgrade to the Enterprise plan, which also unlocks SCIM, BYOK encryption, custom roles, and the 730-day extended retention option.",
+      "expected_documents": ["authentication.md", "pricing_and_plans.md", "structured/feature_availability.json"],
+      "required_keywords": ["No", "Enterprise"],
+      "challenge": "combines plan-availability with feature-availability"
+    },
+    {
+      "id": "q14",
+      "category": "multi_document_reasoning",
+      "query": "If a customer deploys a NovaCompute Standard workload and triggers a severity-1 incident, what is the SLA credit and the support response-time commitment?",
+      "expected_answer": "SLA credit depends on the monthly bill for the affected service and how badly the SLA was missed (10/25/50/100% brackets); the NovaCompute data-plane target is 99.9%. Severity-1 support response is committed only on Business (1 hour) and Enterprise (15 minutes). Growth has no committed severity-1 response; Starter has no SLA at all. So a customer who needs a committed severity-1 response must be on Business or Enterprise.",
+      "expected_documents": ["service_availability.md", "support.md", "pricing_and_plans.md"],
+      "required_keywords": ["Business", "Enterprise", "1 hour", "15 minutes"],
+      "challenge": "synthesize SLA credit + support response + plan-availability"
+    },
+    {
+      "id": "q15",
+      "category": "multi_document_reasoning",
+      "query": "What three identity providers does NovaCloud support for SAML SSO, and what SCIM version does it implement?",
+      "expected_answer": "Okta, Microsoft Entra ID, Google Workspace, and OneLogin (four providers are listed in the feature_availability.json). SCIM 2.0.",
+      "expected_documents": ["authentication.md", "structured/feature_availability.json"],
+      "required_keywords": ["Okta", "Microsoft Entra ID", "Google Workspace", "SCIM 2.0"],
+      "challenge": "structured data + prose"
+    },
+    {
+      "id": "q16",
+      "category": "token_budget_selection",
+      "query": "List the four NovaCompute tiers and their per-workload CPU core limits.",
+      "expected_answer": "Edge: 2 cores. Standard: 16 cores. Isolated: 64 cores. Isolated (GPU): 64 cores + up to 8 GPUs (Enterprise private beta).",
+      "expected_documents": ["usage_limits.md", "structured/product_limits.json"],
+      "required_keywords": ["Edge", "Standard", "Isolated", "2", "16", "64"],
+      "challenge": "structured-data retrieval with a list-of-four expectation; Smart RAG should compress to budget=800"
+    },
+    {
+      "id": "q17",
+      "category": "token_budget_selection",
+      "query": "What is the per-day API request limit on production tokens, and which customers are subject to it?",
+      "expected_answer": "250,000 requests per day, applies to Enterprise tokens only. Legacy annual contracts predate this limit and retain unbounded daily quota until renewal (grandfathering expires by 2026-12-31).",
+      "expected_documents": ["api_rate_limits.md", "structured/api_limits.json"],
+      "required_keywords": ["250,000", "Enterprise"],
+      "challenge": "structured + grandfathering nuance"
+    },
+    {
+      "id": "q18",
+      "category": "single_fact",
+      "query": "How long does NovaCloud retain audit logs before aggregating them to a summary?",
+      "expected_answer": "365 days, then aggregated to a summary that is retained indefinitely.",
+      "expected_documents": ["data_retention.md"],
+      "required_keywords": ["365 days", "indefinitely"],
+      "challenge": "single-fact lookup"
+    },
+    {
+      "id": "q19",
+      "category": "single_fact",
+      "query": "What encryption algorithm does NovaCloud use for data at rest, and what level is its HSM validated to?",
+      "expected_answer": "AES-256 encryption at rest. Keys are managed by an HSM that is FIPS 140-2 Level 3 validated. Enterprise customers may bring their own keys (BYOK).",
+      "expected_documents": ["security.md"],
+      "required_keywords": ["AES-256", "FIPS 140-2", "Level 3"],
+      "challenge": "single-fact lookup, three sub-facts"
+    },
+    {
+      "id": "q20",
+      "category": "single_fact",
+      "query": "What is the NovaDB backup-retention window on the Business cluster tier?",
+      "expected_answer": "30 days of backups, plus 30 days of point-in-time recovery on Business. Enterprise extends PITR to 35 days.",
+      "expected_documents": ["data_retention.md", "structured/product_limits.json"],
+      "required_keywords": ["30 days", "Business"],
+      "challenge": "specific numeric lookup"
+    },
+    {
+      "id": "q21",
+      "category": "context_restoration",
+      "query": "What is the difference between a soft ceiling and a hard ceiling?",
+      "expected_answer": "A hard ceiling rejects the operation (400 error with an exceeded-limit code) and never lets the request through. A soft ceiling allows the request but emits a warning event in the audit log and shows up in the customer dashboard. Per-workspace API tokens (1000) is a hard ceiling; nova_compute_oversubscription is a soft ceiling.",
+      "expected_documents": ["usage_limits.md", "structured/product_limits.json"],
+      "required_keywords": ["rejects", "warning"],
+      "challenge": "split across prose and structured file"
+    },
+    {
+      "id": "q22",
+      "category": "context_restoration",
+      "query": "How are tokens revoked when a user is removed from a workspace?",
+      "expected_answer": "They are not automatically. Removing a user only revokes dashboard access; the user's API tokens remain valid until explicitly revoked. The atomic 'remove user + revoke tokens' operation is on the roadmap but not yet available.",
+      "expected_documents": ["account_management.md"],
+      "required_keywords": ["not automatically", "remain valid"],
+      "challenge": "non-obvious behavior; default assumption is wrong"
+    },
+    {
+      "id": "q23",
+      "category": "context_restoration",
+      "query": "When a customer closes their account, what happens to their data after 14 days?",
+      "expected_answer": "After the 14-day grace period, all resources are deleted, all API tokens are revoked, all user accounts removed, and all billing relationships terminated. Reopening during the 14-day window restores everything. After the window, data is gone (metadata backup is retained for legal hold for 30 additional days but cannot be restored to a usable account).",
+      "expected_documents": ["account_management.md", "refunds.md"],
+      "required_keywords": ["grace period", "deleted"],
+      "challenge": "split across two docs with overlapping info"
+    },
+    {
+      "id": "q24",
+      "category": "redundancy",
+      "query": "What does NovaCloud charge for NovaObserve ingestion and retention?",
+      "expected_answer": "NovaObserve bills $0.15 per GB ingested per month, with a 5 GB free allowance. Long-term retention (after 30 days) is $1.20 per million spans.",
+      "expected_documents": ["pricing_and_plans.md", "structured/pricing_plans.json"],
+      "required_keywords": ["0.15", "1.20"],
+      "challenge": "redundant across prose and JSON"
+    },
+    {
+      "id": "q25",
+      "category": "redundancy",
+      "query": "What MFA methods does NovaCloud support and which one does it explicitly NOT support?",
+      "expected_answer": "TOTP authenticator apps, WebAuthn (security keys / passkeys), and push notifications. SMS is explicitly not supported.",
+      "expected_documents": ["authentication.md"],
+      "required_keywords": ["TOTP", "WebAuthn", "push", "SMS", "not supported"],
+      "challenge": "explicitly negative fact; 'not supported' clause"
+    },
+    {
+      "id": "q26",
+      "category": "redundancy",
+      "query": "How does a customer get a copy of NovaCloud's SOC 2 report?",
+      "expected_answer": "Email compliance@example. Reports are released under NDA.",
+      "expected_documents": ["security.md"],
+      "required_keywords": ["compliance@example", "NDA"],
+      "challenge": "single-fact, but easy to confuse with ISO report"
+    },
+    {
+      "id": "q27",
+      "category": "noisy_retrieval",
+      "query": "Does the 30-day evaluation credit stack with the startup credit?",
+      "expected_answer": "No. The $250 / 30-day evaluation credit and the $5,000 startup credit are not stackable. The startup credit applies over 12 months to base_subscription and usage_charges; the evaluation credit applies only to usage_charges.",
+      "expected_documents": ["pricing_and_plans.md", "structured/pricing_plans.json"],
+      "required_keywords": ["No", "not stackable"],
+      "challenge": "structured-field comparison + distractor-friendly prose"
+    },
+    {
+      "id": "q28",
+      "category": "noisy_retrieval",
+      "query": "Does NovaCloud train AI models on customer data?",
+      "expected_answer": "No. NovaCloud does not train AI models on customer data. Anonymized, aggregated usage data is used to train dashboard recommendation models, but it is not exported to third-party AI providers and does not include customer content. Customers can opt out from the privacy settings page.",
+      "expected_documents": ["privacy.md"],
+      "required_keywords": ["No", "does not train"],
+      "challenge": "explicitly negative fact; distractor paragraph is the only place where this is mentioned"
+    },
+    {
+      "id": "q29",
+      "category": "noisy_retrieval",
+      "query": "Does NovaCloud offer free consulting hours to all customers?",
+      "expected_answer": "No. Free consulting was true under the discontinued 'Advisory' program that ended in December 2023. Today, consulting hours are available only on Enterprise plans and only as part of a separately-negotiated professional services engagement.",
+      "expected_documents": ["support.md"],
+      "required_keywords": ["No", "discontinued", "Enterprise"],
+      "challenge": "distractor paragraph is the canonical mention; negative answer"
+    },
+    {
+      "id": "q30",
+      "category": "noisy_retrieval",
+      "query": "Does NovaCloud offer a 99.99% uptime guarantee?",
+      "expected_answer": "No. The highest published SLA target is 99.95% (NovaCompute control plane, NovaDB, Dashboard/API). The 99.99% claim appeared on a 2022 marketing page and was corrected in 2023, but cached copies still circulate.",
+      "expected_documents": ["service_availability.md"],
+      "required_keywords": ["No", "99.95%"],
+      "challenge": "explicitly negative; distractor paragraph"
+    }
+  ]
+}

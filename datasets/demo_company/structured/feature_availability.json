@@ -1,0 +1,138 @@
+{
+  "$schema_note": "SYNTHETIC DEVELOPMENT / EVALUATION DATA -- NOT A REAL PRODUCT",
+  "feature_release_stages": ["private_beta", "public_beta", "generally_available", "deprecated"],
+  "features": [
+    {
+      "id": "gpu_pooling",
+      "name": "GPU pooling for NovaCompute",
+      "applies_to": ["nova_compute"],
+      "release_stage": "private_beta",
+      "available_on_plans": ["enterprise"],
+      "expected_general_availability": "2026-Q2",
+      "alternative_during_beta": null,
+      "sla_in_beta": "best_effort"
+    },
+    {
+      "id": "cross_region_live_migration",
+      "name": "Cross-region live migration for NovaDB",
+      "applies_to": ["nova_db"],
+      "release_stage": "private_beta",
+      "available_on_plans": ["enterprise"],
+      "expected_general_availability": "2026-Q3",
+      "alternative_during_beta": "snapshot_and_restore",
+      "sla_in_beta": "best_effort"
+    },
+    {
+      "id": "schema_diff",
+      "name": "Schema diff tool for NovaDB migrations",
+      "applies_to": ["nova_db"],
+      "release_stage": "private_beta",
+      "available_on_plans": ["business", "enterprise"],
+      "expected_general_availability": "2026-Q2",
+      "alternative_during_beta": "manual_diff_via_cli",
+      "sla_in_beta": "best_effort"
+    },
+    {
+      "id": "inline_transforms",
+      "name": "Inline transforms for NovaStream",
+      "applies_to": ["nova_stream"],
+      "release_stage": "private_beta",
+      "available_on_plans": ["business", "enterprise"],
+      "expected_general_availability": "2026-Q3",
+      "alternative_during_beta": "separate_consumer_application",
+      "sla_in_beta": "best_effort"
+    },
+    {
+      "id": "windows_serverless",
+      "name": "Windows serverless containers for NovaCompute",
+      "applies_to": ["nova_compute"],
+      "release_stage": "deprecated",
+      "available_on_plans": [],
+      "expected_general_availability": null,
+      "alternative_during_beta": "nova_compute_standard_tier_with_dedicated_windows_nodes",
+      "sla_in_beta": "not_available",
+      "notes": "Deferred three times; most recent deferral announced November 2024. Not expected before Q3 2026."
+    },
+    {
+      "id": "device_code_grant",
+      "name": "OAuth 2.0 device-code grant",
+      "applies_to": ["authentication"],
+      "release_stage": "deprecated",
+      "available_on_plans": [],
+      "expected_general_availability": "2026-Q4",
+      "alternative_during_beta": "implement_authorization_server_then_exchange_code",
+      "sla_in_beta": "not_available"
+    },
+    {
+      "id": "graphql_gateway",
+      "name": "GraphQL API gateway",
+      "applies_to": ["api"],
+      "release_stage": "deprecated",
+      "available_on_plans": [],
+      "expected_general_availability": null,
+      "alternative_during_beta": "third_party_adapter",
+      "sla_in_beta": "not_available"
+    },
+    {
+      "id": "free_tier_nova_compute_edge",
+      "name": "Permanent free tier for NovaCompute Edge",
+      "applies_to": ["nova_compute"],
+      "release_stage": "deprecated",
+      "available_on_plans": [],
+      "expected_general_availability": null,
+      "alternative_during_beta": null,
+      "notes": "Experiment ended December 2023. Not expected to return in 2026."
+    },
+    {
+      "id": "fedramp_moderate",
+      "name": "FedRAMP Moderate authorization",
+      "applies_to": ["security"],
+      "release_stage": "private_beta",
+      "available_on_plans": ["enterprise"],
+      "expected_general_availability": "2026-Q4",
+      "alternative_during_beta": "govcloud_deployment",
+      "sla_in_beta": "best_effort"
+    },
+    {
+      "id": "sso_saml",
+      "name": "Single sign-on via SAML 2.0",
+      "applies_to": ["authentication"],
+      "release_stage": "generally_available",
+      "available_on_plans": ["enterprise"],
+      "supported_identity_providers": ["okta", "microsoft_entra_id", "google_workspace", "onelogin"]
+    },
+    {
+      "id": "scim",
+      "name": "SCIM 2.0 provisioning",
+      "applies_to": ["authentication"],
+      "release_stage": "generally_available",
+      "available_on_plans": ["enterprise"],
+      "supported_identity_providers": ["okta", "microsoft_entra_id", "google_workspace", "onelogin"]
+    },
+    {
+      "id": "byok_encryption",
+      "name": "Bring-your-own-key encryption",
+      "applies_to": ["security"],
+      "release_stage": "generally_available",
+      "available_on_plans": ["enterprise"],
+      "key_management": "customer_managed_keys_in_customer_hsm"
+    },
+    {
+      "id": "custom_roles",
+      "name": "Custom RBAC roles",
+      "applies_to": ["authentication"],
+      "release_stage": "generally_available",
+      "available_on_plans": ["business", "enterprise"],
+      "underlying_permissions_count": 23
+    },
+    {
+      "id": "multi_region_deployment",
+      "name": "Multi-region deployment for NovaCompute",
+      "applies_to": ["nova_compute"],
+      "release_stage": "generally_available",
+      "available_on_plans": ["business", "enterprise"]
+    }
+  ],
+  "request_early_access": "Customers interested in early access should contact their account executive. Early-access features are subject to different SLAs than generally-available features.",
+  "documentation_caveat": "Features listed here are accurate as of the synthetic dataset date. NovaCloud reserves the right to change feature availability without notice."
+}

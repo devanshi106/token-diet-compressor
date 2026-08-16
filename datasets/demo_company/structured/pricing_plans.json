@@ -1,0 +1,252 @@
+{
+  "$schema_note": "SYNTHETIC DEVELOPMENT / EVALUATION DATA -- NOT A REAL PRODUCT",
+  "currency": "USD",
+  "billing_cadences": ["monthly", "annual"],
+  "annual_discount_percent": 15,
+  "plans": [
+    {
+      "id": "starter",
+      "name": "Starter",
+      "intended_for": "evaluation, hobby projects, teams under three engineers",
+      "base_price_monthly_usd": 0,
+      "base_price_annual_usd": 0,
+      "included_seats": 1,
+      "included_storage_gb_month": 50,
+      "support_level": "community",
+      "support_response_severity_1_minutes": null,
+      "support_response_severity_2_minutes": null,
+      "support_response_severity_3_minutes": null,
+      "support_business_hours_only": false,
+      "sla_targets": {
+        "dashboard_and_api": null,
+        "control_plane": null,
+        "data_plane": null
+      },
+      "available_features": [
+        "nova_compute_edge_tier",
+        "nova_db_basic",
+        "community_support"
+      ],
+      "unavailable_features": [
+        "nova_compute_isolated_tier",
+        "nova_compute_standard_tier",
+        "cross_region_replication",
+        "sso_saml",
+        "scim",
+        "custom_roles",
+        "private_vpc_peering",
+        "dedicated_technical_account_management",
+        "byok_encryption",
+        "extended_retention"
+      ]
+    },
+    {
+      "id": "growth",
+      "name": "Growth",
+      "intended_for": "small teams that have moved past evaluation",
+      "base_price_monthly_usd": 49,
+      "base_price_annual_usd": 499,
+      "included_seats": 5,
+      "included_storage_gb_month": 500,
+      "support_level": "business_hours",
+      "support_response_severity_1_minutes": null,
+      "support_response_severity_2_minutes": 1440,
+      "support_response_severity_3_minutes": 2880,
+      "support_business_hours_only": true,
+      "sla_targets": {
+        "dashboard_and_api": "99.95%",
+        "control_plane": "99.95%",
+        "data_plane": null
+      },
+      "available_features": [
+        "nova_compute_edge_tier",
+        "nova_compute_standard_tier",
+        "nova_db_basic",
+        "nova_stream_basic",
+        "business_hours_support"
+      ],
+      "unavailable_features": [
+        "nova_compute_isolated_tier",
+        "cross_region_replication",
+        "sso_saml",
+        "scim",
+        "custom_roles",
+        "private_vpc_peering",
+        "dedicated_technical_account_management",
+        "byok_encryption"
+      ]
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "intended_for": "production workloads",
+      "base_price_monthly_usd": 499,
+      "base_price_annual_usd": 5089,
+      "included_seats": 25,
+      "included_storage_gb_month": 5120,
+      "support_level": "24x7",
+      "support_response_severity_1_minutes": 60,
+      "support_response_severity_2_minutes": 240,
+      "support_response_severity_3_minutes": 1440,
+      "support_business_hours_only": false,
+      "sla_targets": {
+        "dashboard_and_api": "99.95%",
+        "control_plane": "99.95%",
+        "data_plane": "99.9%",
+        "nova_db": "99.95%",
+        "nova_stream": "99.9%"
+      },
+      "available_features": [
+        "nova_compute_edge_tier",
+        "nova_compute_standard_tier",
+        "nova_compute_isolated_tier",
+        "nova_db_basic",
+        "nova_db_cross_region_replication",
+        "nova_stream_basic",
+        "nova_stream_advanced",
+        "nova_observe",
+        "nova_shield",
+        "nova_edge",
+        "github_actions_integration",
+        "bitbucket_integration",
+        "datadog_forwarding",
+        "24x7_support"
+      ],
+      "unavailable_features": [
+        "sso_saml",
+        "scim",
+        "custom_roles",
+        "private_vpc_peering",
+        "dedicated_technical_account_management",
+        "byok_encryption",
+        "extended_retention_365_days"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "intended_for": "large teams and regulated workloads",
+      "base_price_monthly_usd": null,
+      "base_price_annual_usd": null,
+      "price_note": "negotiated individually",
+      "included_seats": null,
+      "included_storage_gb_month": null,
+      "support_level": "24x7_premium",
+      "support_response_severity_1_minutes": 15,
+      "support_response_severity_2_minutes": 60,
+      "support_response_severity_3_minutes": 240,
+      "support_business_hours_only": false,
+      "sla_targets": {
+        "dashboard_and_api": "99.95%",
+        "control_plane": "99.95%",
+        "data_plane": "99.9%",
+        "nova_db": "99.95%",
+        "nova_stream": "99.9%",
+        "nova_observe": "99.5%",
+        "nova_shield": "99.9%",
+        "nova_edge": "99.9%"
+      },
+      "available_features": [
+        "nova_compute_edge_tier",
+        "nova_compute_standard_tier",
+        "nova_compute_isolated_tier",
+        "nova_compute_gpu_pooling",
+        "nova_db_basic",
+        "nova_db_cross_region_replication",
+        "nova_db_cross_region_live_migration",
+        "nova_stream_basic",
+        "nova_stream_advanced",
+        "nova_stream_analytics",
+        "nova_observe",
+        "nova_shield",
+        "nova_edge",
+        "github_actions_integration",
+        "bitbucket_integration",
+        "datadog_forwarding",
+        "sso_saml",
+        "scim",
+        "custom_roles",
+        "private_vpc_peering",
+        "dedicated_technical_account_management",
+        "byok_encryption",
+        "extended_retention_730_days",
+        "24x7_support"
+      ],
+      "unavailable_features": []
+    }
+  ],
+  "addons": [
+    {
+      "id": "nova_observe",
+      "name": "NovaObserve",
+      "billing_unit": "gigabyte_ingested_per_month",
+      "price_per_unit_usd": 0.15,
+      "free_allowance_gb": 5,
+      "long_term_retention": {
+        "free_retention_days": 30,
+        "price_per_million_spans_usd": 1.20
+      }
+    },
+    {
+      "id": "nova_shield",
+      "name": "NovaShield",
+      "billing_unit": "million_requests",
+      "price_per_unit_usd": 0.40,
+      "monthly_base_fee_usd": 5.00,
+      "free_allowance_million_requests": 1
+    },
+    {
+      "id": "nova_edge",
+      "name": "NovaEdge",
+      "billing_unit": "gigabyte_egress",
+      "price_per_unit_usd": 0.02,
+      "free_allowance_gb": 50
+    }
+  ],
+  "discounts": [
+    {
+      "id": "startup_credit",
+      "name": "Startup credit",
+      "amount_usd": 5000,
+      "eligibility": "companies that have raised less than $3M total funding and have fewer than ten employees",
+      "applies_over_months": 12,
+      "stackable_with_evaluation_credit": false,
+      "applies_to": ["base_subscription", "usage_charges"],
+      "notes": "Cannot be combined with the 30-day evaluation credit."
+    },
+    {
+      "id": "nonprofit_discount",
+      "name": "Nonprofit discount",
+      "percent": 25,
+      "eligibility": "registered 501(c)(3) and equivalent international organizations",
+      "stackable_with_other_discounts": true,
+      "applies_to": ["base_subscription"],
+      "notes": "Does not apply to usage-based charges."
+    },
+    {
+      "id": "multi_year_3y",
+      "name": "Three-year contract discount",
+      "percent": 8,
+      "applies_to": ["base_subscription", "committed_usage"],
+      "notes": "Requires a signed three-year contract."
+    },
+    {
+      "id": "multi_year_5y",
+      "name": "Five-year contract discount",
+      "percent": 15,
+      "applies_to": ["base_subscription", "committed_usage"],
+      "notes": "Requires a signed five-year contract."
+    }
+  ],
+  "evaluation_credit": {
+    "amount_usd": 250,
+    "duration_days": 30,
+    "stackable_with_startup_credit": false,
+    "applies_to": ["usage_charges"]
+  },
+  "regional_pricing": {
+    "EUR": { "rate_usd_per_eur": 1.07, "update_frequency": "quarterly" },
+    "BRL": { "update_frequency": "monthly" },
+    "JPY": { "rate_basis": "spot_on_invoice_date" }
+  }
+}

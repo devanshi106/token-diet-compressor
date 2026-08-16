@@ -1,0 +1,79 @@
+{
+  "$schema_note": "SYNTHETIC DEVELOPMENT / EVALUATION DATA -- NOT A REAL PRODUCT",
+  "environments": {
+    "production": {
+      "token_prefix": "nvc_live_",
+      "per_token_limits": {
+        "requests_per_minute": 600,
+        "requests_per_hour": 60000,
+        "requests_per_day": 250000,
+        "daily_limit_applies_to": ["enterprise"],
+        "burst_allowance_percent": 20,
+        "burst_applies_to": ["per_minute"]
+      },
+      "per_account_limits": {
+        "active_tokens": 1000,
+        "concurrent_long_running_requests": 500,
+        "webhook_subscriptions": 5000
+      },
+      "long_running_request_threshold_seconds": 5,
+      "idempotency": {
+        "header": "Idempotency-Key",
+        "key_max_length": 255,
+        "retention_hours": 24
+      }
+    },
+    "sandbox": {
+      "token_prefix": "nvc_sandbox_",
+      "per_token_limits": {
+        "requests_per_minute": 60,
+        "requests_per_hour": 6000,
+        "requests_per_day": null
+      },
+      "per_account_limits": {
+        "active_tokens": 100,
+        "concurrent_long_running_requests": 50,
+        "webhook_subscriptions": 100
+      },
+      "long_running_request_threshold_seconds": 5
+    },
+    "internal": {
+      "token_prefix": "nvc_internal_",
+      "per_token_limits": {
+        "requests_per_minute": 6000,
+        "requests_per_hour": 600000,
+        "requests_per_day": null
+      },
+      "note": "internal tokens are issued only to NovaCloud employees and contractors"
+    }
+  },
+  "response_headers_on_429": [
+    "Retry-After",
+    "X-RateLimit-Limit",
+    "X-RateLimit-Remaining",
+    "X-RateLimit-Reset"
+  ],
+  "limit_increase": {
+    "request_channel": "support@example",
+    "review_sla_business_days": 10,
+    "negotiable_for_plans": ["enterprise"]
+  },
+  "historical_change_log": [
+    {
+      "date": "2025-03-15",
+      "change": "Introduced 250,000 per-day limit for Enterprise tokens.",
+      "grandfathering": "legacy annual contracts predate this limit and retain unbounded daily quota until renewal.",
+      "grandfathering_expires_by": "2026-12-31"
+    },
+    {
+      "date": "2023-09-01",
+      "change": "Increased production hourly limit from 36,000 to 60,000.",
+      "grandfathering": null
+    },
+    {
+      "date": "2022-04-01",
+      "change": "Removed the per-account concurrent webhook delivery cap.",
+      "grandfathering": null
+    }
+  ]
+}
