@@ -248,8 +248,7 @@ def test_gemini_client_model_resolution() -> None:
     class MockModelsService:
         def list(self):
             return [
-                MockModel("models/other-model", ["otherAction"]),
-                MockModel("models/gemini-2.5-flash-lite", ["generateContent"]),
+                MockModel("models/gemini-3.6-flash", ["generateContent"]),
                 MockModel("models/gemini-2.5-flash", ["generateContent"]),
             ]
 
@@ -259,16 +258,16 @@ def test_gemini_client_model_resolution() -> None:
 
     client = GeminiLLMClient(cfg, api_key="fake-api-key")
     client._client = MockGenaiClient()
-    
-    # Verify gemini-2.5-flash is preferred as default when available
-    assert client._resolve_model("some-unavailable-model") == "gemini-2.5-flash"
-    
-    # Verify fallback if gemini-2.5-flash is not available
-    class MockModelsServiceNo25:
+
+    # Verify gemini-3.6-flash is preferred when available
+    assert client._resolve_model("some-requested-model") == "gemini-3.6-flash"
+
+    # Verify fallback to 2.5-flash when 3.6-flash not available
+    class MockModelsServiceNo36:
         def list(self):
             return [
-                MockModel("models/other-model", ["otherAction"]),
+                MockModel("models/gemini-2.5-flash", ["generateContent"]),
                 MockModel("models/gemini-2.5-flash-lite", ["generateContent"]),
             ]
-    client._client.models = MockModelsServiceNo25()
-    assert client._resolve_model("some-unavailable-model") == "gemini-2.5-flash-lite"
+    client._client.models = MockModelsServiceNo36()
+    assert client._resolve_model("some-requested-model") == "gemini-2.5-flash"

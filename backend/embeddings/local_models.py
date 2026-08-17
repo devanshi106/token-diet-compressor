@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Iterable, Optional
 
 from backend.rag.interfaces import CrossEncoder, Embedder
 
 logger = logging.getLogger(__name__)
+
+# Ensure HF progress bars stay suppressed even when this module is imported
+# outside the Streamlit entry point (e.g. by scripts or tests).
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 # Single global cache for initialized models to prevent reloading weights.
 _MODEL_CACHE: dict[tuple[str, str], Any] = {}
@@ -34,7 +41,25 @@ class SentenceTransformersEmbedder(Embedder):
             from sentence_transformers import SentenceTransformer
 
             logger.info(f"Loading SentenceTransformer model {self.model_name} on {self.device}...")
-            _MODEL_CACHE[cache_key] = SentenceTransformer(self.model_name, device=self.device)
+            # HF/tqdm writes loading progress to stderr via stdlib's
+            # `print(..., file=sys.stderr)` + manual `flush()`. When this
+            # process's stderr is a non-standard stream (e.g. Streamlit's
+            # tornado log wrapper on Windows), the flush raises
+            # OSError: [Errno 22] Invalid argument. Temporarily redirect
+            # stderr to devnull for the construction only.
+            import contextlib
+            import sys as _sys
+            import tempfile
+            devnull = open(os.devnull, "w", encoding="utf-8")
+            try:
+                with contextlib.redirect_stderr(devnull):
+                    _MODEL_CACHE[cache_key] = SentenceTransformer(
+                        self.model_name, device=self.device
+                    )
+            finally:
+                devnull.close()
+            # Restore real stderr for any further logging.
+            _sys.stderr = _sys.__stderr__
         return _MODEL_CACHE[cache_key]
 
     def encode(self, texts: Iterable[str]) -> list[list[float]]:
@@ -68,7 +93,7 @@ class SentenceTransformersCrossEncoder(CrossEncoder):
 
     def __init__(
         self,
-        model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        model_name: str = "cross-encoder/ms-marco-TinyBERT-L-2-v2",
         device: str = "cpu",
     ) -> None:
         self.model_name = model_name
@@ -81,7 +106,19 @@ class SentenceTransformersCrossEncoder(CrossEncoder):
             from sentence_transformers import CrossEncoder as STCrossEncoder
 
             logger.info(f"Loading CrossEncoder model {self.model_name} on {self.device}...")
-            _MODEL_CACHE[cache_key] = STCrossEncoder(self.model_name, device=self.device)
+            # Same stderr workaround as the embedder -- tqdm's flush()
+            # crashes inside Streamlit's non-standard stderr on Windows.
+            import contextlib
+            import sys as _sys
+            devnull = open(os.devnull, "w", encoding="utf-8")
+            try:
+                with contextlib.redirect_stderr(devnull):
+                    _MODEL_CACHE[cache_key] = STCrossEncoder(
+                        self.model_name, device=self.device
+                    )
+            finally:
+                devnull.close()
+            _sys.stderr = _sys.__stderr__
         return _MODEL_CACHE[cache_key]
 
     def predict(self, pairs: list[tuple[str, str]], batch_size: int = 32) -> list[float]:

@@ -340,20 +340,26 @@ def _extract_structured_blocks(chunk_text: str) -> list[_Block]:
                 return True
         return False
 
-    # 1. Fenced code blocks
+    def add_block(kind: str, text: str, start: int) -> None:
+        """Add a block only when it does not overlap any already-collected block."""
+        if text and not is_overlapping(start, start + len(text)):
+            blocks.append(_Block(text=text, kind=kind, start=start))
+
+    # 1. Fenced code blocks — extract first; everything else is checked
+    #    against these ranges so a JSON block or table inside a code block
+    #    is automatically rejected.
     for m in _FENCE_RE.finditer(chunk_text):
         lang = m.group(1).strip()
         body = m.group(2)
         label = f"```{lang or ''}\n{body}```"
         blocks.append(_Block(text=label, kind="code", start=m.start()))
 
-    # 2. JSON blocks (top-level balanced, non-overlapping)
+    # 2. JSON blocks (top-level balanced, non-overlapping with code blocks)
     for start, end, val in find_json_blocks(chunk_text):
-        if not is_overlapping(start, end):
-            blocks.append(_Block(text=val, kind="json", start=start))
+        add_block("json", val, start)
 
-    # 3. Markdown tables (using exact line offset tracking, non-overlapping)
-    line_starts = []
+    # 3. Markdown tables (exact line-offset tracking, non-overlapping)
+    line_starts: list[tuple[int, str]] = []
     cursor = 0
     for line in chunk_text.splitlines(keepends=True):
         line_starts.append((cursor, line))
@@ -368,10 +374,8 @@ def _extract_structured_blocks(chunk_text: str) -> list[_Block]:
             while j < len(line_starts) and _TABLE_LINE_RE.match(line_starts[j][1]):
                 run_text += line_starts[j][1]
                 j += 1
-            
             end_offset = start_offset + len(run_text)
-            if not is_overlapping(start_offset, end_offset):
-                blocks.append(_Block(text=run_text, kind="table", start=start_offset))
+            add_block("table", run_text, start_offset)
             i = j
         else:
             i += 1

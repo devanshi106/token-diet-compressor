@@ -1,0 +1,51 @@
+# Dashboard Test Questions
+# Each question is designed to demonstrate the compressor's reranker
+# by pulling from multiple chunks where fast_filter and cross-encoder
+# scores disagree on relative importance.
+#
+# What to look for in the metrics panel:
+# - rerank_ms: ~50-100ms (TinyBERT L-2 cross-encoder on CPU, post-cache)
+# - First request after server start: ~5-10s while model loads into RAM
+# - compressed_token_count: significantly below original_token_count
+# - selected_unit_count: 3-6 units from ~20 candidates after filter
+
+# 1. Multi-topic: pulls billing + rate-limits + data-retention chunks
+#    Fast filter spreads score evenly; cross-encoder picks best subset.
+How does billing work, what are the API rate limits, and how is data retained?
+
+# 2. Two unrelated topics: pulls auth + pricing chunks
+#    Units from different docs compete; cross-encoder resolves conflict.
+How does authentication work and what pricing plans are available?
+
+# 3. Feature overlap: pulls NovaDB feature docs + rate-limits docs
+#    Fast filter may overweight lexically-rich chunks; cross-encoder
+#    focuses on actual relevance to the NovaDB question.
+What NovaDB features and limits apply to the Business tier?
+
+# 4. Three unrelated topics: pulls deployment + auth + billing chunks
+#    Wide retrieval creates hard competition; cross-encoder needed.
+How do I deploy, authenticate, and manage billing for my account?
+
+# 5. Specific feature: pulls tightly from one doc but with competitor chunks
+#    Cross-encoder distinguishes precise matches from loose keyword matches.
+What is the NovaDB backup retention window for the Business cluster?
+
+# 6. Technical cross-doc: pulls encryption + incident-response docs
+#    Two very different doc types; cross-encoder resolves trade-off.
+How does encryption at rest work and what is the incident response process?
+
+# 7. Limits overlap: pulls NovaStream + API rate-limits + NovaDB usage docs
+#    Many overlapping limit topics; cross-encoder picks most relevant.
+What are the NovaStream limits, API rate limits, and NovaDB usage limits?
+
+# 8. Pricing + security: pulls pricing plans + authentication docs
+#    Fast_filter BM25 may confuse pricing terms; cross-encoder clarifies.
+What pricing tiers are available and how does account authentication work?
+
+# 9. Operations: pulls deployment guide + incident response + data retention
+#    Long retrieval creates real budget pressure; reranker chooses wisely.
+How do I deploy to production, respond to incidents, and retain data?
+
+# 10. Specific retention policy: pulls deeply from data_retention chunk
+#     but gets competitor chunks from billing/usage_limits.
+What are the data retention and backup policies for NovaDB clusters?

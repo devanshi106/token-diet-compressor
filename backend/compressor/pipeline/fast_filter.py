@@ -133,12 +133,16 @@ def fast_filter_candidates(
     bm25_norm = _normalize(bm25_scores)
 
     # 2. Embedding scores (cached on units so Stage 4 doesn't redo the work).
-    embedder_input = [u.target_text for u in units]
-    embeddings = embedder.encode(embedder_input)
+    # Batch the query with the units in a SINGLE embedder call so the model
+    # forward-pass cost is paid once instead of twice. The first row of the
+    # output is the query embedding; the rest are unit embeddings.
+    embedder_input = [query] + [u.target_text for u in units]
+    all_embeddings = embedder.encode(embedder_input)
+    q_emb = all_embeddings[0]
+    embeddings = all_embeddings[1:]
     for unit, emb in zip(units, embeddings):
         unit.embedding = emb
 
-    q_emb = embedder.encode([query])[0]
     emb_scores: list[float] = []
     for emb in embeddings:
         if not emb or not q_emb:

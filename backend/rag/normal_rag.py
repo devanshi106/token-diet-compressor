@@ -28,6 +28,7 @@ class NormalRAGResult:
     total_time_ms: float
     context_tokens: int
     raw_chunks: list[Any]
+    output_tokens: int = 0  # tokens the LLM actually produced in the answer
     succeeded: bool = True
     error: str | None = None
 
@@ -86,6 +87,7 @@ class NormalRAG:
             total_time_ms=(t_end - t_start) * 1000,
             context_tokens=raw_tokens,
             raw_chunks=raw_chunks,
+            output_tokens=count_tokens("".join(pieces)) if succeeded else 0,
             succeeded=succeeded,
             error=error_msg,
         )

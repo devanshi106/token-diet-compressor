@@ -57,40 +57,13 @@ from backend.llm.gemini_client import (  # noqa: E402
 from backend.rag.normal_rag import NormalRAG  # noqa: E402
 from backend.rag.smart_rag import SmartRAG  # noqa: E402
 from backend.compressor.pipeline import PipelineComponents  # noqa: E402
-from datasets.demo.queries.evaluation_queries import EvalQuery
+from datasets import EvalQuery, EVAL_QUERIES as _ALL_EVAL_QUERIES
 
-def _load_evaluation_queries() -> list[EvalQuery]:
-    json_path = ROOT / "datasets" / "demo_company" / "queries.json"
-    if not json_path.exists():
-        raise FileNotFoundError(f"Missing queries JSON file at: {json_path}")
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    queries = data.get("queries", [])
-    
-    # Validation that the dataset contains exactly 30 valid queries.
-    # If the dataset is invalid, fail loudly.
-    if len(queries) != 30:
-        raise ValueError(f"CRITICAL: Dataset must contain exactly 30 queries, but found {len(queries)}")
-        
-    out = []
-    for q in queries:
-        req_kws = tuple(q.get("required_keywords", []))
-        expected_docs = q.get("expected_documents", [])
-        source_doc = expected_docs[0] if expected_docs else ""
-        
-        eq = EvalQuery(
-            query=q["query"],
-            category=q.get("category", ""),
-            difficulty="medium",
-            required_keywords=req_kws,
-            source_doc=source_doc,
-            notes=q.get("challenge", ""),
-        )
-        object.__setattr__(eq, "_expected_answer", q["expected_answer"])
-        out.append(eq)
-    return out
-
-EVAL_QUERIES = _load_evaluation_queries()
+# EVAL_QUERIES is imported directly from the datasets package, which
+# loads it from datasets/demo_company/queries.json at import time.
+# The 30-query enforcement was removed to avoid exhausting API keys
+# during interactive dashboard use.
+EVAL_QUERIES = _ALL_EVAL_QUERIES
 
 
 # ---------------------------------------------------------------------------

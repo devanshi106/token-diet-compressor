@@ -51,6 +51,8 @@ def select_budgeted_candidates(
     candidates: list[ScoredCandidate],
     parent_chunks: dict[str, list[ContextUnit]],
     cfg: SelectionConfig,
+    *,  
+    score_key: str = "rerank_score",  # "rerank_score" (accurate, post-rerank) or "final_score" (cheap, pre-rerank)
 ) -> list[ContextUnit]:
     """Select units that fit inside ``cfg.global_token_budget``.
 
@@ -112,7 +114,7 @@ def select_budgeted_candidates(
             for idx in new_indices:
                 u = siblings[idx]
                 selected_units.append(u)
-                unit_priorities[u.unit_id] = cand.rerank_score
+                unit_priorities[u.unit_id] = getattr(cand, score_key)
             estimated_total += net_new
 
     # --- Fallback: nothing selected? pick the top candidate that fits ---
@@ -129,7 +131,7 @@ def select_budgeted_candidates(
             )
             if cost <= cfg.global_token_budget:
                 selected_units = [unit]
-                unit_priorities[unit.unit_id] = cand.rerank_score
+                unit_priorities[unit.unit_id] = getattr(cand, score_key)
                 break
 
     # --- Exact budget validation + priority-aware shrinking ---

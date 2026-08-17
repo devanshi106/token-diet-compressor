@@ -204,15 +204,25 @@ class GeminiLLMClient(LLMClient):
             
             if not available_names:
                 return requested_model
-            
-            # Prefer gemini-2.5-flash if available
-            if "gemini-2.5-flash" in available_names:
-                return "gemini-2.5-flash"
-                
-            if requested_model in available_names:
+
+            # Strip "models/" prefix so bare names match the API response.
+            available_bare = [n.removeprefix("models/") for n in available_names]
+
+            # Prefer gemini-3.6-flash (confirmed available for new API keys).
+            # Older models (2.5-flash) may be restricted for new users.
+            # Fall back to requested model, then the first available.
+            for preferred in (
+                "gemini-3.6-flash",
+                "gemini-3.5-flash",
+                "gemini-2.0-flash",
+            ):
+                if preferred in available_bare:
+                    return preferred
+
+            if requested_model in available_bare:
                 return requested_model
-                
-            return available_names[0]
+
+            return available_bare[0]
         except Exception:
             return requested_model
 
@@ -354,19 +364,32 @@ def _safe_chunk_text(chunk) -> str:
 
 
 def _build_http_options():
-    """Build the SDK's ``HttpOptions`` with quota-aware retries."""
+    """Build the SDK's ``HttpOptions`` with quota-aware retries.
+
+    Free-tier Gemini frequently responds with 503 "UNKNOWN / model overloaded"
+    when the backend is busy, *before* the 429 quota error would fire. The
+    SDK's default 5-attempt loop with exponential backoff and 60s max delay
+    can keep a single request hammering the backend for **several minutes**
+    before it succeeds or escalates to 429.
+
+    For interactive use we want a request to either succeed quickly or fail
+    fast with a clear error -- not silently stretch into the 100s-of-seconds
+    range. We pin ``attempts=2`` so the SDK tries at most twice before
+    bubbling the error up, where we already have quota-aware handling.
+    """
     try:
         from google.genai import types  # type: ignore[import-not-found]
     except Exception:  # pragma: no cover -- SDK import errors
         return None
     retry = types.HttpRetryOptions(
-        # 5 attempts is the SDK default; we keep it for transient errors
-        # but restrict the retriable set so quota errors are excluded.
-        attempts=5,
-        initial_delay=1.0,
-        max_delay=60.0,
+        # Cap transient retries so a busy/overloaded backend doesn't
+        # waste minutes on a single request. Surface the error to our
+        # quota-aware handler instead.
+        attempts=2,
+        initial_delay=0.5,
+        max_delay=2.0,
         exp_base=2.0,
-        jitter=1.0,
+        jitter=0.1,
         http_status_codes=list(_RETRYABLE_STATUS_CODES),
     )
     return types.HttpOptions(api_version="v1", retry_options=retry)

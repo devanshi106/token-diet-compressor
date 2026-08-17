@@ -41,23 +41,17 @@ def compress_context(
     cfg: CompressorConfig | None = None,
     components: PipelineComponents | None = None,
 ) -> CompressorOutput:
-    """Run the full 5-stage compressor on a single query + retrieved chunks.
+    """Run the 5-stage compression pipeline on a query + retrieved chunks.
 
-    Parameters
-    ----------
-    query:
-        The user's question.
-    chunks:
-        Either :class:`RetrievedChunk` objects *or* plain dicts with at
-        least ``{"text", "doc_id", "chunk_id"}`` (matches the plan's
-        pseudocode shape).
-    cfg:
-        Compressor configuration. Falls back to defaults.
-    components:
-        Stage implementations. The pipeline fails fast if ``embedder`` or
-        ``cross_encoder`` are not provided -- they have no sensible
-        default (sending 800 tokens through a Cross-Encoder with a fake
-        embedder would defeat the purpose of the test).
+    Stage 1  Unit Formation    -- split chunks into semantic units (prose/table/code)
+    Stage 2  Fast Filter       -- rank units by cheap BM25 + embedding blended score
+    Stage 3  Cross-Encoder     -- re-rank with full query-document attention
+    Stage 4  Budget Selection  -- greedy pack into token budget
+    Stage 5  Pack & Order      -- assemble final context string
+
+    The cross-encoder (Stage 3) is the primary latency cost on CPU (~10-15s)
+    but produces meaningfully better selection than the fast blended score,
+    especially for queries where lexical and embedding signals disagree.
     """
 
     cfg = cfg or CompressorConfig()
@@ -73,7 +67,7 @@ def compress_context(
     t_start = time.perf_counter()
 
     # Stage 1 -- Unit Formation
-    units_out: UnitFormationOutput = form_context_units(
+    units_out = form_context_units(
         chunks,
         splitter=components.splitter or RegexSentenceSplitter(),
     )
@@ -99,7 +93,7 @@ def compress_context(
     )
     t_rerank = time.perf_counter()
 
-    # Stage 4 -- Smart Token-Budgeted Selection
+    # Stage 4 -- Token-Budgeted Selection
     selection_cfg = SelectionConfig(
         global_token_budget=cfg.global_token_budget,
         restoration_window_left=cfg.restoration_window_left,
@@ -108,9 +102,10 @@ def compress_context(
         markdown_header_overhead_tokens=cfg.markdown_header_overhead_tokens,
     )
     selected = select_budgeted_candidates(
-        candidates=candidates,
-        parent_chunks=units_out.parent_chunks,
-        cfg=selection_cfg,
+        candidates,
+        units_out.parent_chunks,
+        selection_cfg,
+        score_key="rerank_score",
     )
     t_select = time.perf_counter()
 

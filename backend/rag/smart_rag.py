@@ -18,6 +18,7 @@ from backend.rag.database import VectorDatabase
 from backend.llm.gemini_client import LLMClient
 from backend.rag.normal_rag import NormalRAGResult
 from backend.compressor.pipeline import PipelineComponents, compress_context
+from backend.embeddings.tokenizer import count_tokens
 
 
 @dataclass
@@ -34,6 +35,7 @@ class SmartRAGResult:
     original_tokens: int
     compressed_tokens: int
     raw_chunks: list[Any]
+    output_tokens: int = 0  # tokens the LLM actually produced in the answer
     succeeded: bool = True
     error: str | None = None
 
@@ -104,6 +106,7 @@ class SmartRAG:
             original_tokens=compressed.metrics["original_token_count"],
             compressed_tokens=compressed.metrics["compressed_token_count"],
             raw_chunks=raw_chunks,
+            output_tokens=count_tokens("".join(pieces)) if succeeded else 0,
             succeeded=succeeded,
             error=error_msg,
         )

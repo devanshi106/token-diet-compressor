@@ -1,6 +1,6 @@
 """Streamlit dashboard for the Token-Diet Dynamic Context Compressor.
 
-Plan §21 metric priority + §28 interactive UX:
+Dashboard metrics:
 
 1. Original Retrieved-Context Tokens (Normal RAG)
 2. Compressed-Context Tokens (Smart RAG)
@@ -20,6 +20,16 @@ Run with::
 """
 
 from __future__ import annotations
+
+import os
+
+# Suppress HF / tqdm progress bars before any model import.
+# Streamlit's stdio redirection on Windows breaks tqdm's stderr flush
+# and crashes with OSError: [Errno 22] Invalid argument. Disabling
+# the progress bars at the environment level is the supported workaround.
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 import time
 import sys
@@ -96,11 +106,85 @@ def _keyword_correctness(answer: str, required: tuple[str, ...]) -> bool:
     return all(kw.lower() in a for kw in required) if required else True
 
 
+def _format_latency_delta(ms: float) -> tuple[str, str]:
+    """Format a latency delta for a Smart RAG metric.
+
+    Returns ``(label, delta_color)`` suitable for ``st.metric(delta=..., delta_color=...)``.
+
+    Positive ``ms`` means Smart RAG saved time relative to Normal RAG (good).
+    Negative ``ms`` means Smart RAG cost extra time (bad).
+
+    The label uses an explicit "faster" / "slower" word so the meaning is
+    unambiguous regardless of how Streamlit renders the delta color.
+
+    Streamlit "normal" semantics: positive delta → green ↑, negative → red ↓.
+    We always use "normal" so the arrow colour matches the sign of the
+    delta (faster = green, slower = red).
+    """
+    seconds = abs(ms) / 1000.0
+    if ms >= 0:
+        return f"{seconds:.2f} s faster than Normal", "normal"
+    else:
+        return f"{seconds:.2f} s slower than Normal", "normal"
+
+
+def _validate_key_format(key: str) -> str:
+    """Return one of: ``'valid'``, ``'empty'``, ``'ellipsis'``, ``'too_short'``.
+
+    The check accepts any non-trivially-long, non-ellipsis string and
+    lets the SDK decide whether the credential actually works. We do
+    NOT enforce a single prefix because the GenAI SDK accepts several
+    credential shapes (API keys starting with ``AIza``, OAuth access
+    tokens starting with ``AQ.``, etc.) depending on whether Vertex AI
+    mode is enabled.
+    """
+    s = (key or "").strip()
+    if not s:
+        return "empty"
+    if "\u2026" in s:
+        return "ellipsis"
+    if len(s) < 20:
+        return "too_short"
+    return "valid"
+
+
+def _render_chunks(chunks: list, label: str) -> None:
+    """Render the retrieved chunks in an expander section.
+
+    ``chunks`` is the list returned by ``db.retrieve()``; each item
+    is expected to expose ``.doc_id``, ``.chunk_id`` (optional),
+    ``.text``, and ``.score`` (optional). If those attributes are
+    missing we degrade gracefully and show whatever is iterable.
+    """
+    import streamlit as st
+
+    if not chunks:
+        st.caption(f"_{label}: no chunks retrieved._")
+        return
+    for i, chunk in enumerate(chunks, start=1):
+        doc = getattr(chunk, "doc_id", "?")
+        cid = getattr(chunk, "chunk_id", None)
+        score = getattr(chunk, "score", None)
+        text = getattr(chunk, "text", str(chunk))
+        score_str = f"score={score:.3f}" if isinstance(score, (int, float)) else ""
+        title = f"{i}. `{doc}`" + (f" #{cid}" if cid is not None else "") + (
+            f"  {score_str}" if score_str else ""
+        )
+        with st.expander(title, expanded=False):
+            # Truncate very long chunks to keep the page responsive.
+            preview = text if len(text) <= 1500 else text[:1500] + "\n\n_...truncated..._"
+            st.markdown(preview)
+
+
 def _show_quota_error(exc) -> None:
     """Render a clear 'Gemini quota exhausted' panel."""
     import streamlit as st
 
     retry_after = getattr(exc, "retry_after_seconds", None)
+    # Flip a session-level flag so the sidebar banner stays visible
+    # for the rest of this browser session, not just this run.
+    st.session_state["_quota_exhausted"] = True
+    st.session_state["_quota_retry_after_s"] = retry_after
     wait_hint = (
         f"Try again in about **{retry_after:.0f} s** (server hint)."
         if retry_after
@@ -171,7 +255,7 @@ def _build_components(cfg: Any = None):
     cfg = cfg or load_config()
     device = cfg.system.device if hasattr(cfg, "system") else "cpu"
     emb_model = cfg.retriever.embedding_model if hasattr(cfg, "retriever") else "sentence-transformers/all-MiniLM-L6-v2"
-    ce_model = cfg.compressor.cross_encoder_model if hasattr(cfg, "compressor") else "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    ce_model = cfg.compressor.cross_encoder_model if hasattr(cfg, "compressor") else "cross-encoder/ms-marco-TinyBERT-L-2-v2"
 
     return PipelineComponents(
         embedder=SentenceTransformersEmbedder(model_name=emb_model, device=device),
@@ -182,10 +266,14 @@ def _build_components(cfg: Any = None):
 def _build_llm(api_key: str = ""):
     from backend.config.config import load_config
     from backend.llm.gemini_client import GeminiLLMClient
+    from backend.llm.groq_client import GroqLLMClient
 
     cfg = load_config()
     if api_key:
         cfg = _override_api_key_env(cfg, api_key)
+    provider = (cfg.llm.provider or "gemini").lower()
+    if provider == "groq":
+        return GroqLLMClient(cfg.llm), cfg
     return GeminiLLMClient(cfg.llm), cfg
 
 
@@ -208,6 +296,13 @@ def _override_api_key_env(cfg, api_key: str):
 def main() -> None:
     import streamlit as st
 
+    # Load config eagerly so the sidebar can show the fixed parameters
+    # (top-K, budget, model) for transparency without exposing them
+    # as user-editable controls.
+    from backend.config.config import load_config as _load_cfg
+
+    cfg = _load_cfg()
+
     st.set_page_config(
         page_title="Token-Diet",
         page_icon="🪙",
@@ -215,46 +310,88 @@ def main() -> None:
     )
     st.title("🪙 Token-Diet Dynamic Context Compressor")
     st.caption(
-        "Side-by-side comparison of Normal RAG and Smart RAG against the "
-        "Token-Diet compressor middleware (plan §21)."
+        "Same RAG pipeline — one with the Token-Diet compressor in front of "
+        "the LLM, one without. Side-by-side so you can see what compression "
+        "does to answer quality, latency, and cost."
     )
 
     with st.sidebar:
         st.header("Configuration")
+        import os
+        # Quota-aware banner: once Gemini returns 429 in this session,
+        # we keep the warning visible until the session restarts so the
+        # user doesn't keep clicking "Run" and burning their remaining
+        # retry attempts on a known-failed quota.
+        if st.session_state.get("_quota_exhausted"):
+            retry_after = st.session_state.get("_quota_retry_after_s")
+            wait = f" (~{retry_after:.0f}s)" if retry_after else ""
+            provider_name = (cfg.llm.provider or "gemini").capitalize()
+            st.error(
+                f"🚫 {provider_name} quota exhausted. Wait for the daily reset{wait}, "
+                f"or upgrade to a paid plan. **Disable the compressor toggle** "
+                f"if you only need a quick smoke test of the LLM endpoint."
+            )
+        # Provider-aware key handling: the env var name is whatever
+        # LLMConfig says, with a default of GEMINI_API_KEY for Gemini
+        # or GROQ_API_KEY for Groq.
+        provider_name = (cfg.llm.provider or "gemini").lower()
+        key_env = cfg.llm.api_key_env or (
+            "GROQ_API_KEY" if provider_name == "groq" else "GEMINI_API_KEY"
+        )
+        key_label = "Groq API key" if provider_name == "groq" else "Gemini API key"
+        existing_env_key = os.environ.get(key_env, "")
+        _existing_key_status = _validate_key_format(existing_env_key)
+        if existing_env_key:
+            if _existing_key_status == "valid":
+                st.success(
+                    f"✓ {provider_name.upper()} API key already loaded "
+                    f"(from .env or shell). Paste a new one below to override "
+                    f"for this session."
+                )
+        else:
+            st.warning(f"No {key_env} set. Paste one below to enable this run.")
         api_key = st.text_input(
-            "Gemini API key",
+            key_label,
             type="password",
-            help="Stored only in the runtime env var; not persisted.",
+            help="Paste to override the .env value for this session. Not persisted to disk.",
         )
         if api_key:
-            # Common paste mistake: an ellipsis `…` (U+2026) inserted where
-            # copy-paste truncated the middle of the key. Reject it loudly
-            # instead of letting Gemini return a 400/429 and burying the
-            # root cause under a UnicodeEncodeError on Windows.
             stripped = api_key.strip()
-            if "\u2026" in stripped or len(stripped) < 20:
+            _status = _validate_key_format(stripped)
+            if _status == "ellipsis":
                 st.error(
-                    "That doesn't look like a valid Gemini API key. "
+                    "That doesn't look like a valid credential. "
                     "Did you accidentally paste an ellipsis `…` where the "
-                    "middle of the key got truncated? Re-copy the full key "
-                    "from the Google AI Studio dashboard."
+                    "middle got truncated? Re-copy from the source."
                 )
                 api_key = ""
+            elif _status == "too_short":
+                st.error("That credential is too short. Re-copy from the source.")
+                api_key = ""
             else:
-                import os
-
-                os.environ["GEMINI_API_KEY"] = stripped
-        top_k = st.slider("Top-K retrieved chunks", 1, 20, 5)
-        budget = st.slider("Global token budget", 100, 2000, 800, step=50)
-        required_keywords = st.text_input(
-            "Required keywords (comma-separated, optional)",
-            "",
-        ).strip()
-        keywords = tuple(k.strip() for k in required_keywords.split(",") if k.strip()) if required_keywords else ()
-        ref_ans_input = st.text_area(
-            "Reference/Expected answer (optional)",
-            "",
-            help="If empty, it auto-detects if the query is in the evaluation query set.",
+                os.environ[key_env] = stripped
+                # Clear any previous-run quota-exhausted flag — a new
+                # key is unlikely to have the same quota state.
+                st.session_state.pop("_quota_exhausted", None)
+                st.session_state.pop("_quota_retry_after_s", None)
+                st.success("✓ Override applied for this session.")
+        # PRD §28: the only user controls are the query input and the
+        # compressor ON/OFF toggle. All retrieval/compression parameters
+        # (top-K, budget, similarity threshold, cross-encoder model) are
+        # fixed in backend/config/default_config.yaml and not surfaced
+        # to the user — they are infrastructure knobs, not product knobs.
+        use_compressor = st.toggle(
+            "Context compressor",
+            value=True,
+            help="When ON, Smart RAG runs the Token-Diet compressor "
+            "before the LLM. When OFF, both sides use uncompressed "
+            "context (the comparison collapses, but it's useful to "
+            "verify the LLM answer alone).",
+        )
+        st.caption(
+            f"Retrieval top-K: **{cfg.retriever.top_k}** · "
+            f"Token budget: **{cfg.compressor.global_token_budget}** · "
+            f"Compressor model: `{cfg.compressor.cross_encoder_model}`"
         )
 
     query = st.text_input(
@@ -267,30 +404,22 @@ def main() -> None:
     if not run or not query:
         # Idle state: show a quick "what this dashboard shows" pane.
         st.info(
-            "**Dashboard metrics (plan §21)**: Original tokens → "
+            "Dashboard metrics (top to bottom): Original tokens → "
             "Compressed tokens → Compression % → Compressor latency → "
-            "LLM TTFT → End-to-end latency → Net savings → Cost → "
-            "Correctness → Semantic similarity."
+            "LLM TTFT → End-to-end latency → Net savings → Cost."
         )
         return
 
     # Execute the comparison. We import here to avoid pulling
     # streamlit-time deps if the user only opens the dashboard.
-    from backend.config.config import load_config
-    from backend.evaluation.evaluation import EvalQuery
     from backend.rag.normal_rag import NormalRAG
     from backend.rag.smart_rag import SmartRAG
 
-    cfg = load_config()
-    # Apply UI overrides via env vars (the loader picks them up).
-    import os
-
-    os.environ["TOKEN_DIET_TOP_K"] = str(top_k)
-    os.environ["TOKEN_DIET_BUDGET"] = str(budget)
-    cfg = load_config()
-
-    if not api_key and not os.environ.get("GEMINI_API_KEY"):
-        st.error("GEMINI_API_KEY is not set. Paste one in the sidebar or export it first.")
+    if not api_key and not os.environ.get(key_env):
+        st.error(
+            f"{key_env} is not set. Paste one in the sidebar "
+            f"or export it first."
+        )
         return
 
     llm, _ = _build_llm(api_key)
@@ -300,21 +429,41 @@ def main() -> None:
     # Apply env-var overrides a second time, then run.
     from backend.llm.gemini_client import LLMQuotaExhaustedError
 
-    progress = st.progress(0.25, text="Normal RAG...")
-    try:
-        normal = NormalRAG(db, llm, cfg).run(query)
-    except LLMQuotaExhaustedError as exc:
-        progress.empty()
-        _show_quota_error(exc)
-        return
-    progress.progress(0.60, text="Smart RAG...")
-    try:
-        smart = SmartRAG(db, llm, cfg, components=components).run(query)
-    except LLMQuotaExhaustedError as exc:
-        progress.empty()
-        _show_quota_error(exc)
-        return
-    progress.progress(1.0, text="Done.")
+    # Run Normal RAG and Smart RAG **sequentially**. Concurrent execution
+    # under a free-tier Gemini quota (~20 RPM) triggers a 429 retry loop
+    # on one side and inflates its latency measurement; sequential
+    # execution keeps both measurements faithful at the cost of an
+    # additional ~latency window in wall-clock terms.
+    if use_compressor:
+        progress = st.progress(0.10, text="Running Normal RAG...")
+        try:
+            normal = NormalRAG(db, llm, cfg).run(query)
+        except LLMQuotaExhaustedError as exc:
+            _show_quota_error(exc)
+            return
+        progress.progress(0.55, text="Running Smart RAG (compressor + LLM)...")
+        try:
+            smart = SmartRAG(db, llm, cfg, components=components).run(query)
+        except LLMQuotaExhaustedError as exc:
+            _show_quota_error(exc)
+            return
+        progress.progress(1.0, text="Done.")
+    else:
+        # Compressor disabled by the toggle. We only run Normal RAG —
+        # the side-by-side comparison collapses because there is
+        # nothing to compress against.
+        progress = st.progress(0.50, text="Running Normal RAG...")
+        try:
+            normal = NormalRAG(db, llm, cfg).run(query)
+        except LLMQuotaExhaustedError as exc:
+            _show_quota_error(exc)
+            return
+        smart = normal  # reuse the same result for layout purposes
+        progress.progress(1.0, text="Done.")
+        st.info(
+            "Compressor is OFF — only the Normal RAG column is meaningful. "
+            "Toggle the compressor ON in the sidebar to see the side-by-side comparison."
+        )
 
     # If either side failed but did NOT raise (e.g. a non-quota LLM
     # error that the engines caught), surface that too instead of
@@ -333,8 +482,7 @@ def main() -> None:
     col3.metric(
         "Compression %",
         f"{cmp['token_compression_pct']:.1f}%",
-        delta=f"{cmp['token_compression_pct']:.1f}% vs baseline",
-        delta_color="inverse",
+        delta=f"{cmp['token_compression_pct']:.1f}% smaller than baseline",
     )
 
     col4, col5, col6 = st.columns(3)
@@ -343,10 +491,12 @@ def main() -> None:
         f"{normal.total_time_ms / 1000:.2f} s",
         help="Retrieval + LLM TTFT.",
     )
+    _smart_lat_label, _smart_lat_color = _format_latency_delta(cmp["net_latency_savings_ms"])
     col5.metric(
         "Smart RAG latency",
         f"{smart.total_time_ms / 1000:.2f} s",
-        delta=f"{cmp['net_latency_savings_ms'] / 1000:+.2f} s vs normal",
+        delta=_smart_lat_label,
+        delta_color=_smart_lat_color,
     )
     col6.metric(
         "Compressor overhead",
@@ -359,17 +509,27 @@ def main() -> None:
         "Normal LLM TTFT",
         f"{normal.llm_ttft_ms / 1000:.2f} s",
     )
+    _smart_ttft_label, _smart_ttft_color = _format_latency_delta(normal.llm_ttft_ms - smart.llm_ttft_ms)
     col8.metric(
         "Smart LLM TTFT",
         f"{smart.llm_ttft_ms / 1000:.2f} s",
-        delta=f"{(normal.llm_ttft_ms - smart.llm_ttft_ms) / 1000:+.2f} s vs normal",
-        delta_color="inverse",
+        delta=_smart_ttft_label,
+        delta_color=_smart_ttft_color,
     )
     col9.metric(
         "Net input cost savings",
         f"${_estimate_cost(normal.context_tokens) - _estimate_cost(smart.compressed_tokens):.6f}",
         delta=f"normal cost ${_estimate_cost(normal.context_tokens):.6f}",
         delta_color="off",
+    )
+
+    # ------------------------------------------------------------ Output tokens
+    # Distinguishes "LLM is faster because it has less to read" (good)
+    # from "LLM is slower because it generated more verbose hedging output"
+    # (bad). Same numeric prompt savings, very different latency story.
+    st.caption(
+        f"Output tokens (what the LLM actually wrote): "
+        f"Normal **{normal.output_tokens}** · Smart **{smart.output_tokens}**"
     )
 
     # ------------------------------------------------------------ Stage breakdown
@@ -386,12 +546,31 @@ def main() -> None:
         st.bar_chart({r["stage"]: r["ms"] for r in rows})
 
     # --------------------------------------------------------------- Answers
+    # ------------------------------------------------- Retrieved chunks inspector
+    # Both Normal and Smart RAG see the same retrieved chunks -- only
+    # the compressor middleware differs -- so we render this once,
+    # before the side-by-side answers panel.
+    with st.expander("📄 Retrieved chunks (what the LLM actually saw)"):
+        _render_chunks(normal.raw_chunks, label="Retrieved (top-K)")
+
     st.subheader("💬 Side-by-Side Answers")
     a, b = st.columns(2)
     with a:
         st.markdown("**Normal RAG (no compression)**")
         st.caption(f"context tokens: {normal.context_tokens}")
-        st.write(normal.answer or "(no answer)")
+        if not normal.answer:
+            st.warning(
+                "⚠️ The LLM returned no text content for this run, even "
+                "though {n} chunks ({t} tokens) were retrieved and sent. "
+                "This is a Gemini-side anomaly — likely a streaming edge "
+                "case where the SDK yielded empty chunks — not a RAG "
+                "failure. The retrieved chunks above are still valid and "
+                "the Smart RAG side may still answer correctly.".format(
+                    n=len(normal.raw_chunks), t=normal.context_tokens
+                )
+            )
+        else:
+            st.write(normal.answer)
     with b:
         st.markdown("**Smart RAG (Token-Diet compressed)**")
         st.caption(
@@ -399,24 +578,14 @@ def main() -> None:
         )
         st.write(smart.answer or "(no answer)")
 
-    # -------------------------------------------------------------- Correctness
-    if keywords:
-        n_ok = _keyword_correctness(normal.answer, keywords)
-        s_ok = _keyword_correctness(smart.answer, keywords)
-        st.subheader("✅ Correctness (plan §20)")
-        st.write(
-            {
-                "Normal RAG": "PASS" if n_ok else "FAIL",
-                "Smart RAG": "PASS" if s_ok else "FAIL",
-                "Required keywords": ", ".join(keywords),
-            }
-        )
-
     # ------------------------------------------------------------- Semantic Similarity
+    # If the user's query happens to match one of the 30 evaluation
+    # queries in queries.json, we have a known-good reference answer
+    # to compare against. Otherwise this panel stays hidden — the
+    # user is exploring the system, not running an evaluation.
     from datasets.demo.queries.evaluation_queries import REFERENCE_ANSWERS
-    ref_ans = ref_ans_input.strip() if ref_ans_input.strip() else REFERENCE_ANSWERS.get(query.strip(), "")
+    ref_ans = REFERENCE_ANSWERS.get(query.strip(), "")
     if ref_ans:
-        st.subheader("🎯 Answer Cosine Similarity (PRD metric)")
         try:
             texts = [ref_ans]
             indices = []

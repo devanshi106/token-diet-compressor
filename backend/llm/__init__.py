@@ -1,4 +1,4 @@
-"""LLM package - LLM client abstractions and Gemini implementation."""
+"""LLM package - LLM client abstractions and provider implementations."""
 from backend.llm.gemini_client import (
     FakeLLMClient,
     GeminiLLMClient,
@@ -6,10 +6,12 @@ from backend.llm.gemini_client import (
     LLMError,
     LLMQuotaExhaustedError,
 )
+from backend.llm.groq_client import GroqLLMClient
 
 __all__ = [
     "FakeLLMClient",
     "GeminiLLMClient",
+    "GroqLLMClient",
     "LLMClient",
     "LLMError",
     "LLMQuotaExhaustedError",
