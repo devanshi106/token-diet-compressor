@@ -38,6 +38,8 @@ class SmartRAGResult:
     output_tokens: int = 0  # tokens the LLM actually produced in the answer
     succeeded: bool = True
     error: str | None = None
+    llm_server_prompt_time_ms: float = 0.0
+    llm_server_queue_time_ms: float = 0.0
 
 
 class SmartRAG:
@@ -109,6 +111,8 @@ class SmartRAG:
             output_tokens=count_tokens("".join(pieces)) if succeeded else 0,
             succeeded=succeeded,
             error=error_msg,
+            llm_server_prompt_time_ms=getattr(self.llm, "last_prompt_time_ms", 0.0),
+            llm_server_queue_time_ms=getattr(self.llm, "last_queue_time_ms", 0.0),
         )
 
     # Convenience for benchmark code: compare a Smart run to a Normal one.

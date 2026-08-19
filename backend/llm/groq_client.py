@@ -151,6 +151,16 @@ class GroqLLMClient(LLMClient):
 
     # -- public API ----------------------------------------------------------
 
+    def _inspect_chunk_usage(self, chunk) -> None:
+        usage = getattr(chunk, "usage", None)
+        if usage is not None:
+            prompt_time = getattr(usage, "prompt_time", None)
+            if prompt_time is not None:
+                self.last_prompt_time_ms = float(prompt_time) * 1000
+            queue_time = getattr(usage, "queue_time", None)
+            if queue_time is not None:
+                self.last_queue_time_ms = float(queue_time) * 1000
+
     def _chat_stream(self, prompt):
         """Build the streaming completion and yield OpenAI chunks."""
         messages = _coerce_messages(prompt)
@@ -160,6 +170,7 @@ class GroqLLMClient(LLMClient):
             temperature=self._cfg.temperature,
             max_tokens=self._cfg.max_tokens,
             stream=True,
+            stream_options={"include_usage": True},
         )
         return stream
 
@@ -203,6 +214,8 @@ class GroqLLMClient(LLMClient):
             ttft_ms=(first_token_time - t0) * 1000 if first_token_time else (t1 - t0) * 1000,
             total_ms=(t1 - t0) * 1000,
             model=self._resolved_model_name,
+            server_prompt_time_ms=getattr(self, "last_prompt_time_ms", 0.0),
+            server_queue_time_ms=getattr(self, "last_queue_time_ms", 0.0),
         )
 
     def generate_stream(self, prompt, **kwargs) -> Iterable[str]:
@@ -219,6 +232,9 @@ class GroqLLMClient(LLMClient):
                 "`pip install openai>=1.0`."
             )
 
+        self.last_prompt_time_ms = 0.0
+        self.last_queue_time_ms = 0.0
+
         try:
             stream = self._chat_stream(prompt)
         except BaseException as exc:
@@ -227,6 +243,7 @@ class GroqLLMClient(LLMClient):
 
         try:
             first = next(stream)
+            self._inspect_chunk_usage(first)
         except BaseException as exc:
             self._raise_for_quota(exc)
             raise
@@ -235,6 +252,7 @@ class GroqLLMClient(LLMClient):
             try:
                 yield _safe_chunk_text(first)
                 for chunk in stream:
+                    self._inspect_chunk_usage(chunk)
                     yield _safe_chunk_text(chunk)
             except BaseException as exc:
                 self._raise_for_quota(exc)

@@ -505,16 +505,35 @@ def main() -> None:
     )
 
     col7, col8, col9 = st.columns(3)
+    normal_help = "Measured from client. Includes network transit."
+    if getattr(normal, "llm_server_prompt_time_ms", 0.0) > 0:
+        normal_help += (
+            f"\n\nServer-side breakdown:\n"
+            f"- Prompt processing: {normal.llm_server_prompt_time_ms:.1f} ms\n"
+            f"- Server queue time: {normal.llm_server_queue_time_ms:.1f} ms\n"
+            f"- Total Server TTFT: {normal.llm_server_prompt_time_ms + normal.llm_server_queue_time_ms:.1f} ms"
+        )
     col7.metric(
         "Normal LLM TTFT",
         f"{normal.llm_ttft_ms / 1000:.2f} s",
+        help=normal_help,
     )
+    
+    smart_help = "Measured from client. Includes network transit."
+    if getattr(smart, "llm_server_prompt_time_ms", 0.0) > 0:
+        smart_help += (
+            f"\n\nServer-side breakdown:\n"
+            f"- Prompt processing: {smart.llm_server_prompt_time_ms:.1f} ms\n"
+            f"- Server queue time: {smart.llm_server_queue_time_ms:.1f} ms\n"
+            f"- Total Server TTFT: {smart.llm_server_prompt_time_ms + smart.llm_server_queue_time_ms:.1f} ms"
+        )
     _smart_ttft_label, _smart_ttft_color = _format_latency_delta(normal.llm_ttft_ms - smart.llm_ttft_ms)
     col8.metric(
         "Smart LLM TTFT",
         f"{smart.llm_ttft_ms / 1000:.2f} s",
         delta=_smart_ttft_label,
         delta_color=_smart_ttft_color,
+        help=smart_help,
     )
     col9.metric(
         "Net input cost savings",
@@ -527,10 +546,21 @@ def main() -> None:
     # Distinguishes "LLM is faster because it has less to read" (good)
     # from "LLM is slower because it generated more verbose hedging output"
     # (bad). Same numeric prompt savings, very different latency story.
-    st.caption(
+    extra_captions = []
+    if getattr(normal, "llm_server_prompt_time_ms", 0.0) > 0 or getattr(smart, "llm_server_prompt_time_ms", 0.0) > 0:
+        extra_captions.append(
+            f"**Exact Server-Side Timing (from Groq API headers):**  \n"
+            f"* **Normal RAG**: Prompt time = **{normal.llm_server_prompt_time_ms:.1f} ms**, "
+            f"Queue time = **{normal.llm_server_queue_time_ms:.1f} ms** (Total: **{normal.llm_server_prompt_time_ms + normal.llm_server_queue_time_ms:.1f} ms**)  \n"
+            f"* **Smart RAG**: Prompt time = **{smart.llm_server_prompt_time_ms:.1f} ms**, "
+            f"Queue time = **{smart.llm_server_queue_time_ms:.1f} ms** (Total: **{smart.llm_server_prompt_time_ms + smart.llm_server_queue_time_ms:.1f} ms**)"
+        )
+    
+    extra_captions.append(
         f"Output tokens (what the LLM actually wrote): "
         f"Normal **{normal.output_tokens}** · Smart **{smart.output_tokens}**"
     )
+    st.markdown("\n\n---\n\n".join(extra_captions))
 
     # ------------------------------------------------------------ Stage breakdown
     st.subheader("⚙️ Compressor Stage Breakdown")

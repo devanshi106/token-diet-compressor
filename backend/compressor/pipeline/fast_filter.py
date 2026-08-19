@@ -132,15 +132,18 @@ def fast_filter_candidates(
     bm25_scores = bm25.score(query)
     bm25_norm = _normalize(bm25_scores)
 
-    # 2. Embedding scores (cached on units so Stage 4 doesn't redo the work).
-    # Batch the query with the units in a SINGLE embedder call so the model
-    # forward-pass cost is paid once instead of twice. The first row of the
-    # output is the query embedding; the rest are unit embeddings.
-    embedder_input = [query] + [u.target_text for u in units]
+    # Sort units based on BM25 scores and select top units
+    scored_units_bm25 = list(zip(units, bm25_scores, bm25_norm))
+    scored_units_bm25.sort(key=lambda item: item[1], reverse=True)
+    top_scored_units = scored_units_bm25[: max(0, candidate_limit)]
+    filtered_units = [item[0] for item in top_scored_units]
+
+    # 2. Embedding scores (only for the filtered top candidates).
+    embedder_input = [query] + [u.target_text for u in filtered_units]
     all_embeddings = embedder.encode(embedder_input)
     q_emb = all_embeddings[0]
     embeddings = all_embeddings[1:]
-    for unit, emb in zip(units, embeddings):
+    for unit, emb in zip(filtered_units, embeddings):
         unit.embedding = emb
 
     emb_scores: list[float] = []
@@ -158,21 +161,20 @@ def fast_filter_candidates(
     candidates: list[ScoredCandidate] = []
     total_w = bm25_weight + embedding_weight
     if total_w <= 0:
-        # Degenerate config -- fall back to lexical-only with weight 1.
         total_w = 1.0
         bm25_weight, embedding_weight = 1.0, 0.0
 
-    for unit, lex, emb in zip(units, bm25_norm, emb_norm):
-        final = (bm25_weight * lex + embedding_weight * emb) / total_w
+    for (unit, bm25_raw, bm25_n), emb in zip(top_scored_units, emb_norm):
+        final = (bm25_weight * bm25_n + embedding_weight * emb) / total_w
         candidates.append(
             ScoredCandidate(
                 unit=unit,
-                lexical_score=lex,
+                lexical_score=bm25_n,
                 embedding_score=emb,
                 final_score=final,
             )
         )
 
-    # 4. Sort by blended score (desc), keep top M.
+    # 4. Sort by blended score (desc)
     candidates.sort(key=lambda c: c.final_score, reverse=True)
-    return candidates[: max(0, candidate_limit)]
+    return candidates

@@ -116,13 +116,11 @@ def _attach_fake_client(monkeypatch, mode: str = "ok") -> GroqLLMClient:
 # ---------------------------------------------------------------------------
 
 
-def test_unconfigured_client_raises_runtime_error() -> None:
+def test_unconfigured_client_raises_runtime_error(monkeypatch) -> None:
     """No api_key in env -> client stays unconfigured -> raises on use."""
     cfg = LLMConfig(api_key_env="DEFINITELY_NOT_SET_GROQ")
-    monkeypatch_holder = None
-    import os
-
-    os.environ.pop("DEFINITELY_NOT_SET_GROQ", None)
+    monkeypatch.delenv("DEFINITELY_NOT_SET_GROQ", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
     client = GroqLLMClient(cfg)
     with pytest.raises(RuntimeError, match="not configured"):
         list(client.generate_stream("hi"))

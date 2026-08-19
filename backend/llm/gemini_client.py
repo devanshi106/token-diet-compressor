@@ -56,6 +56,8 @@ class LLMResult:
     input_tokens: int = 0
     output_tokens: int = 0
     model: str = ""
+    server_prompt_time_ms: float = 0.0
+    server_queue_time_ms: float = 0.0
 
 
 class LLMError(RuntimeError):

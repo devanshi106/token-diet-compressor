@@ -39,7 +39,7 @@ def test_load_config_has_expected_defaults() -> None:
     assert cfg.compressor.fast_filter_candidate_limit == 20
     assert cfg.compressor.similarity_threshold == 0.8
     assert cfg.compressor.cross_encoder_model == "cross-encoder/ms-marco-TinyBERT-L-2-v2"
-    assert cfg.llm.provider == "gemini"
+    assert cfg.llm.provider == "groq"
     assert cfg.llm.api_key_env == "GEMINI_API_KEY"
 
 

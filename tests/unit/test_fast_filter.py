@@ -57,11 +57,11 @@ def test_fast_filter_does_not_tokenize_again(units) -> None:
 
 
 def test_fast_filter_caches_embeddings_on_units(units) -> None:
-    fast_filter_candidates(
+    out = fast_filter_candidates(
         query="anything", units=units, embedder=HashEmbedder(), candidate_limit=2
     )
-    # All units now have embeddings populated for Stage 4's redundancy check.
-    assert all(u.embedding is not None for u in units)
+    # Only candidate units now have embeddings populated for Stage 4's redundancy check.
+    assert all(c.unit.embedding is not None for c in out)
 
 
 def test_fast_filter_zero_weights_falls_back_to_lexical(units) -> None:

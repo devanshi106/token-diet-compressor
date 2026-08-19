@@ -17,6 +17,9 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 # Single global cache for initialized models to prevent reloading weights.
 _MODEL_CACHE: dict[tuple[str, str], Any] = {}
 
+# Global cache for text embeddings to prevent re-encoding identical text strings.
+_EMBEDDING_CACHE: dict[str, dict[str, list[float]]] = {}
+
 
 class SentenceTransformersEmbedder(Embedder):
     """Concrete Embedder utilizing sentence-transformers for local inference.
@@ -67,15 +70,25 @@ class SentenceTransformersEmbedder(Embedder):
         if not text_list:
             return []
 
-        # Run batched encoding with L2 normalization enabled.
-        embeddings = self.model.encode(
-            text_list,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-            convert_to_numpy=True,
-        )
-        # Convert numpy floats/arrays to serializable Python floats
-        return [list(map(float, emb)) for emb in embeddings]
+        model_cache = _EMBEDDING_CACHE.setdefault(self.model_name, {})
+        
+        # Identify unique missing texts
+        unique_texts = list(set(text_list))
+        missing_texts = [t for t in unique_texts if t not in model_cache]
+
+        if missing_texts:
+            # Run batched encoding with L2 normalization enabled.
+            embeddings = self.model.encode(
+                missing_texts,
+                normalize_embeddings=True,
+                show_progress_bar=False,
+                convert_to_numpy=True,
+            )
+            # Convert numpy floats/arrays to serializable Python floats and cache them
+            for text, emb in zip(missing_texts, embeddings):
+                model_cache[text] = [float(val) for val in emb]
+
+        return [model_cache[t] for t in text_list]
 
     @property
     def dim(self) -> int:
