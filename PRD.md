@@ -70,12 +70,14 @@ flowchart LR
 - **Metadata Tagging & Precomputation**: Attach positions, chunk IDs, parent chunk IDs, and token counts to each unit. Run the exact tokenizer once on the `target_text` of each unit during this stage, storing the result in `ContextUnit.token_count`.
 
 ### Stage 2: Fast Relevance Filter
-- **Purpose**: Low-latency candidate-generation stage to reduce candidate units from hundreds down to a configurable pool (e.g., $M = 50$ candidates) before running the heavier reranker.
-- **Implementation**: Apply a lightweight lexical relevance score (such as BM25) combined with fast cosine similarity scores from a lightweight embedding model.
-  - BM25 is applied only as a lightweight post-retrieval candidate filter over the current query's retrieved units.
-  - The retrieved units function as the corpus for this filtering operation.
-  - The baseline retriever and vector database remain completely unchanged.
-  - The implementation should avoid unnecessary repeated BM25 index construction within the same request (e.g., building the index once for the current query context) and benchmark the overhead.
+- **Purpose**: Low-latency candidate-generation stage to reduce candidate units from hundreds down to a configurable pool (e.g., $M = 20$ candidates) before running the heavier reranker.
+- **Implementation**: First, run a lightweight lexical relevance filter (BM25) over the corpus of retrieved units to identify and slice the context down to the top $M$ candidate units. Then, run the lightweight embedding model (`all-MiniLM-L6-v2`) *only* on these $M$ units to calculate cosine similarity, blending it with the BM25 score.
+  - BM25 is applied as a lightweight post-retrieval candidate pre-filter over the current query's retrieved units.
+  - To optimize CPU latency:
+    - We avoid embedding all units by pre-filtering with BM25 first, reducing the embedding load by ~80-90%.
+    - All missing embeddings for the top candidates are calculated in a single batch.
+    - A global embedding cache (`_EMBEDDING_CACHE`) is used to store calculated text embeddings, completely bypassing model calls for duplicate sentence strings.
+    - The baseline retriever and vector database remain completely unchanged.
 
 ### Stage 3: Batched Cross-Encoder Reranking
 - **Purpose**: Generate high-accuracy relevance scores for candidate units.
@@ -131,10 +133,10 @@ flowchart LR
 ## 6. Recommended Tech Stack
 
 - **Language**: Python 3.10+ (standard for data science and ML pipelines).
-- **Sentence Segmentation**: `nltk` (specifically `nltk.tokenize.sent_tokenize`) or `spaCy` (for fast, accurate sentence parsing).
+- **Sentence Segmentation**: Custom regex-based sentence segmentation (`regex` tokenizer, optimized for speed) or `nltk` (fallback).
 - **Embeddings & Cross-Encoder**: `sentence-transformers` library (leveraging PyTorch/Hugging Face).
   - *Embedding model for fast filtering*: `all-MiniLM-L6-v2` (384-dimensional, highly performant).
-  - *Cross-Encoder model*: `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+  - *Cross-Encoder model*: `cross-encoder/ms-marco-TinyBERT-L-2-v2` (~5x faster on CPU than MiniLM-L-6-v2).
 - **Lexical Filter**: `rank_bm25` (lightweight, zero-config BM25 implementation).
 - **Token Counting**: `tiktoken` (exact match for OpenAI tokenization models) or `transformers.AutoTokenizer` (for open-source local LLMs).
 - **Vector DB**: In-memory `faiss-cpu` or a simple NumPy-based matrix for local execution.
@@ -148,44 +150,69 @@ flowchart LR
 ```
 token-diet-compressor/
 │
-├── config/
-│   └── default_config.yaml     # System configurations (budgets, thresholds, paths)
-│
-├── src/
+├── backend/
 │   ├── __init__.py
-│   ├── config.py               # YAML configuration loader
-│   ├── models.py               # Dataclasses and Pydantic validation schemas
-│   ├── database.py             # In-memory document indexing & baseline vector search
-│   ├── normal_rag.py           # Baseline RAG workflow (Retriever -> LLM)
-│   ├── smart_rag.py            # Optimized RAG workflow (Retriever -> Compressor -> LLM)
+│   ├── __main__.py
 │   │
-│   ├── pipeline/
+│   ├── compressor/
+│   │   └── pipeline/
+│   │       ├── __init__.py
+│   │       ├── packer.py               # Reordering and formatting (Stage 5)
+│   │       ├── fast_filter.py          # BM25-first + embedding pre-filtering (Stage 2)
+│   │       ├── reranker.py             # Batched Cross-Encoder inference using scoring_text (Stage 3)
+│   │       ├── selector.py             # Greedy token-budgeted selection (Stage 4)
+│   │       └── unit_formation.py       # Prose & structured logical unit parsing (Stage 1)
+│   │
+│   ├── config/
 │   │   ├── __init__.py
-│   │   ├── unit_formation.py   # Prose & structured logical unit parsing
-│   │   ├── fast_filter.py      # BM25 & Embedding pre-filtering
-│   │   ├── reranker.py         # Batched Cross-Encoder inference using scoring_text
-│   │   ├── selector.py         # Precomputed cost summation & exact budget validation
-│   │   └── packer.py           # Reordering and formatting
+│   │   ├── config.py                   # YAML configuration loader
+│   │   └── default_config.yaml         # Default system parameters
 │   │
-│   └── evaluation.py           # Benchmarking execution engine and metrics calculation
+│   ├── embeddings/
+│   │   ├── __init__.py
+│   │   ├── local_models.py             # Local Embedder (all-MiniLM-L6-v2) & Cross-Encoder (TinyBERT)
+│   │   └── tokenizer.py                # Tiktoken/NLTK/regex-based token count abstraction
+│   │
+│   ├── evaluation/
+│   │   ├── __init__.py
+│   │   └── evaluation.py               # Benchmarking logic and dataset metrics calculation
+│   │
+│   ├── llm/
+│   │   ├── __init__.py
+│   │   ├── gemini_client.py            # Google GenAI SDK client
+│   │   └── groq_client.py              # OpenAI-compatible Groq API client with exact server timing
+│   │
+│   └── rag/
+│       ├── __init__.py
+│       ├── database.py                 # In-memory document indexing & baseline vector search
+│       ├── interfaces.py               # Abstract interfaces for Embedders, Splitters, RAG
+│       ├── models.py                   # ContextUnit, ScoredCandidate, CompressorOutput schemas
+│       ├── normal_rag.py               # Baseline RAG workflow (Retriever -> LLM)
+│       ├── prompt.py                   # Prompt template definitions
+│       ├── retriever.py                # Paragraph chunk vector retriever
+│       └── smart_rag.py                # Optimized RAG workflow (Retriever -> Compressor -> LLM)
+│
+├── datasets/                           # Input evaluation documents & query datasets
+├── docs/                               # Developer manuals & architecture blueprints
+├── frontend/
+│   └── app.py                          # Streamlit comparative dashboard
 │
 ├── tests/
 │   ├── __init__.py
-│   ├── test_unit_formation.py
-│   ├── test_fast_filter.py
-│   ├── test_selector.py
-│   └── test_integration.py
+│   ├── evaluation/
+│   ├── integration/
+│   └── unit/                           # Isolated test cases (e.g. test_fast_filter.py, test_app.py)
 │
-├── app.py                      # Streamlit dashboard application
-├── requirements.txt            # Python package dependencies
-└── README.md                   # Setup and usage instructions
+├── requirements.txt                    # Python package dependencies
+├── README.md                           # Setup and usage instructions
+└── PRD.md                              # Product Requirements Document
 ```
 
 ---
 
 ## 8. Data Models and Classes
 
-We define robust schemas in [models.py](file:///C:/Users/Lenovo/.gemini/antigravity/scratch/token-diet-compressor/src/models.py) to pass items through the pipeline:
+We define robust schemas in [models.py](file:///C:/Users/Lenovo/Desktop/token-diet-compressor/backend/rag/models.py) to pass items through the pipeline:
 
 ```python
 from dataclasses import dataclass, field
@@ -193,16 +220,17 @@ from typing import List, Dict, Any, Optional
 
 @dataclass
 class ContextUnit:
-    unit_id: str             # Format: {doc_id}_{chunk_id}_{unit_idx}
+    unit_id: str                  # Format: {doc_id}_{chunk_id}_{unit_idx}
     doc_id: str
     chunk_id: str
-    target_text: str         # The actual sentence or logical structured block to be evaluated and selected
-    scoring_text: str        # The target text + surrounding context (prose or structured) for Cross-Encoder scoring
-    unit_type: str           # "prose" | "structured"
-    position_idx: int        # 0-indexed position within its parent chunk
+    target_text: str
+    scoring_text: str
+    unit_type: str                # "prose" | "structured"
+    position_idx: int             # 0-indexed position within its parent chunk
     parent_chunk_id: str
-    token_count: int = 0     # Precomputed exact token count of target_text (computed once in Stage 1)
+    token_count: int = 0          # Precomputed exact token count of target_text
     embedding: Optional[List[float]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class ScoredCandidate:
@@ -217,45 +245,56 @@ class CompressorOutput:
     compressed_text: str
     selected_units: List[ContextUnit]
     metrics: Dict[str, Any]
+
+@dataclass(frozen=True)
+class RetrievedChunk:
+    text: str
+    doc_id: str
+    chunk_id: str
+    score: float = 0.0
+    metadata: Dict[str, Any] = field(default_factory=dict)
 ```
 
 ---
 
 ## 9. Configuration Parameters
 
-Configurations are managed via a YAML file (`config/default_config.yaml`):
+Configurations are managed via a YAML file (`backend/config/default_config.yaml`):
 
 ```yaml
 system:
   seed: 42
-  device: "cpu" # "cpu" or "cuda"
+  device: "cpu"          # "cpu" or "cuda"
 
 retriever:
-  top_k: 5 # number of document chunks to retrieve
+  top_k: 10              # chunks pulled from the vector DB per query
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
 
 compressor:
-  global_token_budget: 800  # maximum tokens for LLM context (invariant cap)
-  sentence_tokenizer: "nltk"
-  
-  # Stage 2: Fast Filter
-  fast_filter_candidate_limit: 50 # M candidates
+  global_token_budget: 800      # hard cap on packed context tokens
+  sentence_tokenizer: "regex"   # "regex" | "nltk" | "spacy"
+  markdown_header_overhead_tokens: 15
+
+  # Stage 2 — Fast Relevance Filter
+  fast_filter_candidate_limit: 20       # M candidates passed to the reranker (reduced for CPU speed)
   bm25_weight: 0.5
   embedding_weight: 0.5
-  
-  # Stage 3: Cross-Encoder
-  cross_encoder_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+  # Stage 3 — Cross-Encoder Rerank
+  cross_encoder_model: "cross-encoder/ms-marco-TinyBERT-L-2-v2"  # 2-layer; ~5x faster on CPU than L-6
   cross_encoder_batch_size: 32
-  
-  # Stage 4: Selection
-  restoration_window_left: 1  # restore N sentences to the left
-  restoration_window_right: 1 # restore N sentences to the right
-  similarity_threshold: 0.8 # similarity-based redundancy filter threshold
-  
+
+  # Stage 4 — Budget Selection
+  restoration_window_left: 1
+  restoration_window_right: 1
+  similarity_threshold: 0.8
+
 llm:
-  provider: "openai" # "openai" or "ollama"
-  model: "gpt-4o-mini"
+  provider: "groq"             # "gemini" | "groq" | "openai" | "ollama"
+  model: "openai/gpt-oss-120b"
   temperature: 0.0
-  max_tokens: 500
+  max_tokens: 1024
+  api_key_env: "GEMINI_API_KEY"
 ```
 
 ---
@@ -288,7 +327,7 @@ gantt
 ## 11. Pseudocode for the Core Compression Pipeline
 
 ```python
-def compress_context(query: str, retrieved_chunks: List[Dict[str, Any]], config: Dict[str, Any]) -> CompressorOutput:
+def compress_context(query: str, retrieved_chunks: List[RetrievedChunk], config: Dict[str, Any]) -> CompressorOutput:
     # Start timer
     t_start = time.perf_counter()
     
@@ -296,7 +335,7 @@ def compress_context(query: str, retrieved_chunks: List[Dict[str, Any]], config:
     units, parent_chunks = form_context_units(retrieved_chunks, config)
     t_units = time.perf_counter()
     
-    # 2. Fast Relevance Filter (Reduce to M candidates)
+    # 2. Fast Relevance Filter (BM25-first filtering, then batched & cached embedding)
     candidates = fast_filter_candidates(query, units, config)
     t_filter = time.perf_counter()
     
@@ -321,7 +360,7 @@ def compress_context(query: str, retrieved_chunks: List[Dict[str, Any]], config:
         "selection_ms": (t_select - t_rerank) * 1000,
         "pack_ms": (t_pack - t_select) * 1000,
         "total_compressor_ms": (t_end - t_start) * 1000,
-        "original_token_count": count_tokens(" ".join([c["text"] for c in retrieved_chunks])),
+        "original_token_count": count_tokens(" ".join([c.text for c in retrieved_chunks])),
         "compressed_token_count": count_tokens(compressed_text)
     }
     
